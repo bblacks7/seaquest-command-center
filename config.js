@@ -165,6 +165,18 @@ window.SEAQUEST_TREE = {
   ]
 };
 
+// ---- Finance model for the HQ Profit & Loss line (edit these) ----
+window.SEAQUEST_FINANCE = {
+  markup: 0.22,        // SeaQuest gross margin on a customer order
+  overhead: 8000,      // baseline operating costs (net profit starts negative until wins cover this)
+  default: 15000,      // fallback order value if none set/estimated
+  avgDeal: {           // estimated customer order value per sector
+    "QSR / Restaurant": 15000, "Foodservice Distributor": 40000, "Packaging Channel": 25000,
+    "Coffee / Beverage": 12000, "Industrial & Ag Sacks": 60000, "Nicotine / Tobacco": 30000,
+    "Ammunition": 20000, "Enterprise / Logistics": 80000, "Prospecting / Other": 15000
+  }
+};
+
 // ---- Academy: training modules. Finish the check to earn XP + a badge. (edit freely) ----
 window.SEAQUEST_ACADEMY = [
   { id:"who", icon:"\u{1F3ED}", title:"Who We Are", xp:60, badge:{i:"\u{1F3ED}",t:"Insider"},

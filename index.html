@@ -277,6 +277,10 @@ const IND_BY_KEY={}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
 const TREE=window.SEAQUEST_TREE||{};
 const NICHE_BY_ID={}; Object.keys(TREE).forEach(ind=>TREE[ind].forEach(n=>NICHE_BY_ID[n.id]={name:n.name,note:n.note,industry:ind}));
 const ACADEMY=window.SEAQUEST_ACADEMY||[];
+const FIN=window.SEAQUEST_FINANCE||{markup:0.22,overhead:8000,default:15000,avgDeal:{}};
+function dealValueOf(c){return (c.dealValue&&c.dealValue>0)?c.dealValue:((FIN.avgDeal&&FIN.avgDeal[c.industry])||FIN.default||15000);}
+function pnl(){const won=S.companies.filter(c=>!c.rejected&&c.stage==='won');const revenue=won.reduce((a,c)=>a+dealValueOf(c),0);const gross=Math.round(revenue*(FIN.markup||0.22));const net=gross-(FIN.overhead||0);return{won:won.length,revenue,gross,overhead:FIN.overhead||0,net};}
+function money(n){return (n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();}
 const STAGE_IDX={}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
 const REP_BY_ID={}; REPS.forEach(r=>REP_BY_ID[r.id]={...r});
 const SUM_POP=STATES.reduce((a,s)=>a+s.pop,0);
@@ -392,6 +396,7 @@ function logAct(text){try{const a=loadActs();a.unshift({t:Date.now(),text,who:S.
 const QUESTS=[
   {key:'calls',   label:'Dial 5 prospects',   goal:5, xp:40, icon:'\u{1F4DE}'},
   {key:'emails',  label:'Send 3 intro emails', goal:3, xp:35, icon:'✉️'},
+  {key:'added',   label:'Research 8 new accounts', goal:8, xp:50, icon:'\u{1F50E}'},
   {key:'advances',label:'Advance 3 accounts',  goal:3, xp:45, icon:'⚔️'},
   {key:'wins',    label:'Close 1 deal',        goal:1, xp:120,icon:'\u{1F3C6}'}
 ];
@@ -439,11 +444,12 @@ function buildModel(list){
     const title=pick(e.title,raw.title);
     const nextStep=pick(e.nextStep,raw.nextStep);
     const niche=pick(e.niche,raw.niche);
+    const dealValue=(e.dealValue!=null?e.dealValue:raw.dealValue)||0;
     const email=pick(e.email,raw.email)||extractEmail(notes,phone);
     const geo=parseGeo(location);
     const rej=(typeof raw._rejected==='boolean')?raw._rejected:isRejected(raw.status);
     const owner=owners[raw.name]||raw.owner||defaultOwner(geo.region);
-    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,niche,
+    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,niche,dealValue,
       geo,rejected:rej,stage:deriveStage(raw.status),owner};
   });
 }
@@ -720,6 +726,19 @@ function viewCommand(){
   const contactedTerr=new Set(S.companies.filter(c=>!c.rejected&&STAGE_IDX[c.stage]>=STAGE_IDX.reached).map(c=>c.geo.terr));
   let h='';
 
+  /* PROFIT & LOSS */
+  const P=pnl();
+  const needMore=P.net<0?Math.round((FIN.overhead-P.gross)/(FIN.markup||0.22)):0;
+  h+=`<h2 class="sec"><span class="dot"></span>Profit &amp; Loss</h2><div class="panel">
+    <div style="display:flex;align-items:baseline;justify-content:space-between">
+      <div style="font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-weight:800">Net profit</div>
+      <div style="font-size:28px;font-weight:900;color:${P.net>=0?'var(--green)':'var(--red)'}">${money(P.net)}</div></div>
+    <div class="bar" style="margin-top:8px"><i style="width:${Math.max(2,Math.min(100,P.gross/Math.max(1,FIN.overhead||1)*100)).toFixed(0)}%;background:${P.net>=0?'var(--green)':'var(--gold)'}"></i></div>
+    <div style="font-size:10px;color:var(--dim2);margin-top:5px">${P.net>=0?'\u{1F7E2} In the black':'\u{1F534} '+money(needMore)+' more in orders to break even'}</div>
+    <div style="display:flex;gap:6px;margin-top:12px">
+      ${pnlMini(money(P.revenue),'Revenue')}${pnlMini(money(P.gross),'Gross margin')}${pnlMini(money(-P.overhead),'Op costs')}${pnlMini(P.won,'Deals won')}
+    </div></div>`;
+
   /* DAILY OPS */
   const q=loadQuests();
   h+=`<h2 class="sec"><span class="dot"></span>Daily Ops <span style="font-weight:800;color:var(--gold);font-size:11px;text-transform:none;letter-spacing:0">&middot; \u{1F525} ${q.streak||0} day streak</span></h2><div class="panel">`;
@@ -817,6 +836,7 @@ function viewCommand(){
   $('#app').innerHTML=h;
 }
 function statTile(n,l,sub,col,onclick){return `<div class="stat" ${onclick?`style="cursor:pointer" onclick="${onclick}"`:''}><div class="n" style="${col?'color:'+col:''}">${n}</div><div class="l">${l}</div><div class="sub">${sub||''}</div></div>`;}
+function pnlMini(v,k){return `<div style="flex:1;text-align:center;background:#0e1723;border:1px solid var(--line);border-radius:10px;padding:8px"><div style="font-size:13px;font-weight:800">${v}</div><div style="font-size:8px;color:var(--dim2);text-transform:uppercase;letter-spacing:.5px;margin-top:2px">${k}</div></div>`;}
 function viewBook(id){S.filter={terr:null,industry:null,stage:null,owner:id,q:''};go('pipeline');}
 
 /* ---------- War Map ---------- */
@@ -1016,6 +1036,11 @@ async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;
   await writeStage(c,key,false);
   if(newIdx>oldIdx)bumpQuest('advances',1);
   if(won)bumpQuest('wins',1);
+  if(won&&!(c.dealValue>0)){
+    const est=dealValueOf(c);
+    let v=prompt('\u{1F3C6} Won '+c.name+'! Order value (what the customer pays, $):',String(est));
+    if(v!=null){const num=parseFloat(String(v).replace(/[^0-9.]/g,''));if(num>0){const ov=loadOv();ov.edits=ov.edits||{};ov.edits[c.name]=Object.assign({},ov.edits[c.name]||{},{dealValue:num});saveOv(ov);c.dealValue=num;}}
+  }
   const after=repXP(c.owner);const al=levelInfo(after).level;const rep=REP_BY_ID[c.owner]||REPS[0];
   logAct((won?'Won ':'Advanced ')+c.name);render();
   if(al>bl){celebrate();toast(`⬆️ LEVEL UP! ${rep.name} is now Lv ${al}`);}
@@ -1102,7 +1127,8 @@ async function submitAdd(){
     contact:$('#a_contact').value.trim(),title:$('#a_title').value.trim(),email:$('#a_email').value.trim(),niche,
     status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
   if(niche)markNiche(niche);
-  closeModal();await addCompany(o);logAct('Added '+name);render();toast('✅ '+name+' added for '+REP_BY_ID[o.owner].name);
+  const gain=5+(telHref(o.phone)?3:0)+(o.email?3:0)+(o.contact?2:0);
+  closeModal();await addCompany(o);addTrainingXP(S.me,gain);bumpStat(S.me,'added',1);logAct('Added '+name+' (+'+gain+' XP)');render();toast('✅ '+name+' added  +'+gain+' XP');
 }
 
 /* ---------- research with Claude -> import to CRM ---------- */
@@ -1179,11 +1205,13 @@ async function importResearch(){
     objs.push({name:r.name,owner:S.me,industry,location:r.location,contact:r.contact,title:r.title,email:r.email,phone:r.phone,notes:r.note,niche,status:statusForStage('researched')});
   });
   if(!objs.length){toast('Those '+rows.length+' are already in your book');return;}
+  const gainXP=objs.reduce((a,o)=>a+5+(telHref(o.phone)?3:0)+(o.email?3:0)+(o.contact?2:0),0);
   if(niche)markNiche(niche);
   closeModal();
   await addCompaniesBulk(objs);
-  logAct('Imported '+objs.length+' companies from Claude');render();
-  toast('✅ Added '+objs.length+' companies'+(skipped?(' ('+skipped+' dupes skipped)'):''));
+  addTrainingXP(S.me,gainXP);bumpStat(S.me,'added',objs.length);
+  logAct('Researched '+objs.length+' companies via Claude (+'+gainXP+' XP)');render();
+  toast('✅ Added '+objs.length+' companies  +'+gainXP+' XP'+(skipped?(' · '+skipped+' dupes skipped'):''));
 }
 async function signIn(){/* reserved for cloud */}
 
@@ -1278,6 +1306,7 @@ function openEdit(idx){
     <div class="field"><label>Location</label><input id="ed_loc" value="${esc(c.location||'')}" placeholder="Austin, TX"></div>
     <div class="field"><label>Stage</label><select id="ed_stage">${STAGES.map(s=>`<option value="${s.key}" ${s.key===c.stage&&!c.rejected?'selected':''}>${s.label}</option>`).join('')}<option value="rejected" ${c.rejected?'selected':''}>Rejected</option></select></div>
     <div class="field"><label>Next step / follow-up</label><input id="ed_next" value="${esc(c.nextStep||'')}" placeholder="Call back Fri, ask for samples"></div>
+    <div class="field"><label>Deal value (customer order $)</label><input id="ed_deal" type="number" value="${c.dealValue||''}" placeholder="e.g. 15000 - feeds the P&L when won"></div>
     <div class="field"><label>Notes</label><textarea id="ed_notes" rows="3">${esc(c.notes||'')}</textarea></div>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitEdit(${idx})">Save</button></div>`;
   $('#modalBg').classList.add('show');
@@ -1286,7 +1315,7 @@ async function submitEdit(idx){
   const c=S.companies[idx];if(!c)return;const name=c.name;
   const patch={contact:$('#ed_contact').value.trim(),title:$('#ed_title').value.trim(),email:$('#ed_email').value.trim(),
     phone:$('#ed_phone').value.trim(),industry:$('#ed_ind').value,location:$('#ed_loc').value.trim(),
-    nextStep:$('#ed_next').value.trim(),notes:$('#ed_notes').value};
+    nextStep:$('#ed_next').value.trim(),dealValue:(parseFloat(String($('#ed_deal').value||'').replace(/[^0-9.]/g,''))||0),notes:$('#ed_notes').value};
   const owner=$('#ed_owner').value;const stageVal=$('#ed_stage').value;
   const ov=loadOv();ov.edits[name]=Object.assign({},ov.edits[name]||{},patch);ov.owners[name]=owner;saveOv(ov);
   if(stageVal==='rejected'){if(!c.rejected)await writeStage(c,c.stage,true);}
@@ -1328,10 +1357,14 @@ function viewRep(){
       <button class="ib" onclick="viewBook('${id}')">\u{1F4C2} Book</button>
       <button class="ib" style="color:var(--purple)" onclick="askClaude('Give me 5 short cold-call opener scripts (2 sentences each, no em-dashes) for a veteran-owned paper packaging company called SeaQuest Global that sources custom bags and boxes from its own factories overseas. Do not quote prices.')">✨ Scripts</button>
     </div></div>`;
+  const repBooked=list.filter(c=>!c.rejected&&c.stage==='won').reduce((a,c)=>a+dealValueOf(c),0);
+  const repCourses=ACADEMY.filter(mm=>trainDone(id,mm.id)).length;
+  const repNiches=new Set(list.filter(c=>c.niche).map(c=>c.niche)).size;
   h+=`<h2 class="sec"><span class="dot"></span>Field Report</h2>
   <div class="statgrid">
     ${stMini(list.length,'Accounts')}${stMini(m.contacted,'Contacted')}${stMini(m.convo+m.won,'Convos')}${stMini(m.won,'Wins')}
-    ${stMini(m.rejected,'Rejects')}${stMini(st.calls,'Calls')}${stMini(st.emails,'Emails')}${stMini(st.games||0,'Pitches')}
+    ${stMini(m.rejected,'Rejects')}${stMini(st.calls,'Calls')}${stMini(st.emails,'Emails')}${stMini(st.added||0,'Added')}
+    ${stMini(st.games||0,'Pitches')}${stMini(money(repBooked),'Booked')}${stMini(repCourses,'Courses')}${stMini(repNiches,'Niches')}
   </div>`;
   const earned=badges.filter(b=>b.ok).length;
   h+=`<h2 class="sec"><span class="dot"></span>Achievements (${earned}/${badges.length})</h2><div class="badges">`
