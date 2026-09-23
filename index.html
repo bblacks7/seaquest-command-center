@@ -274,7 +274,7 @@ const RANKS=[
 
 let sb=null;
 const S={view:'command',companies:[],cloud:false,session:null,me:REPS[0].id,
-  terr:null, terrTab:'all', terrSector:null, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
+  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -481,7 +481,22 @@ function render(){ renderConsole(); renderNav();
   else if(v==='territory')viewTerritory();
   else if(v==='pipeline')viewPipeline();
   else if(v==='sectors')viewSectors();
+  else if(v==='hitlist')viewHitList();
   else if(v==='rep')viewRep();
+}
+function viewHitList(){
+  const me=REP_BY_ID[S.me]||REPS[0];
+  let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
+  if(!S.hitAll)pool=pool.filter(c=>c.owner===me.id);
+  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(c.phone&&telHref(c.phone))p+=3;if(c.email)p+=2;return p;};
+  pool.sort((a,b)=>pr(b)-pr(a)||(a.name||'').localeCompare(b.name||''));
+  const top=pool.slice(0,24);
+  let h=`<h2 class="sec"><span class="dot"></span>Today's Hit List</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Your prioritized worklist. Follow-ups and hot conversations first, then ready and warm accounts. Tap Call or Email to work them.</div>
+  <div class="subtabs"><button class="${!S.hitAll?'on':''}" onclick="S.hitAll=false;render()">My list &middot; ${esc(me.name)}</button><button class="${S.hitAll?'on':''}" onclick="S.hitAll=true;render()">Whole team</button></div>`;
+  if(!top.length)h+=`<div class="empty">Nothing queued for ${S.hitAll?'the team':esc(me.name)}. Everything is won or rejected, or there are no accounts here yet.</div>`;
+  else h+=`<div class="grid g2">`+top.map(unitCard).join('')+`</div>`;
+  $('#app').innerHTML=h;
 }
 function renderConsole(){
   const total=metricsFor(S.companies);
@@ -508,7 +523,7 @@ function renderConsole(){
   setTimeout(()=>{$('#gfill').style.width=Math.max(dpct,dpct>0?1.5:0)+'%';},60);
 }
 function renderNav(){
-  const tabs=[['command','HQ'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
+  const tabs=[['command','HQ'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
   $('#nav').innerHTML=tabs.map(t=>`<button class="${S.view===t[0]||(t[0]==='map'&&S.view==='territory')?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
 }
 function go(v){S.view=v;if(v!=='territory')S.terr=null;window.scrollTo(0,0);render();}
@@ -816,6 +831,7 @@ function openMe(){
         <button class="mini-btn" onclick="event.stopPropagation();renameRep('${rep.id}')">Rename</button></div>`;}).join('')
     +`<div style="font-size:11px;color:var(--dim2);margin-top:12px">Tip: turn on Cloud Sync so each rep logs in on their own phone and their XP is tracked live across the team.</div>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" onclick="closeModal()">Close</button>
+      <button class="btn sm" onclick="openHelp()">? How to play</button>
       <button class="btn sm" onclick="exportData()">\u{1F4BE} Backup</button><button class="btn sm" onclick="importData()">\u{1F4E5} Restore</button></div>`;
   $('#modalBg').classList.add('show');
 }
@@ -1062,6 +1078,20 @@ function exportData(){const keys=['sq_ov_v2','sq_stats','sq_quests','sq_acts','s
 function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='application/json';
   inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);Object.keys(d).forEach(k=>{if(d[k]!=null)localStorage.setItem(k,d[k]);});loadRepNames();S.me=getMe();await reload();closeModal();render();toast('✅ Backup restored');}catch(e){toast('Import failed');}};r.readAsText(f);};inp.click();}
 
+/* ---------- help ---------- */
+function openHelp(){
+  const m=$('#modal');
+  m.innerHTML=`<h3>How the game works</h3>
+  <div style="font-size:13px;color:var(--tx);line-height:1.6">
+    <p style="margin:8px 0"><b>You conquer territory by contacting companies.</b> Each account is a unit you push through stages: Scouted &rarr; Ready &rarr; Contacted &rarr; Engaged &rarr; Won. Reject turns it red.</p>
+    <p style="margin:8px 0"><b>Work the Hit List</b> for your prioritized calls and emails each day. Tap <b style="color:var(--teal)">Call</b> to dial, <b style="color:#8fc0ff">Email</b> for a ready template (or Ask Claude), and <b>Edit</b> to save new contact info.</p>
+    <p style="margin:8px 0"><b>You earn XP and level up.</b> +20 make contact, +45 a conversation, +150 a win. Finish <b>Daily Ops</b> quests and play the <b>Pitch Meter</b> for bonus training XP. Keep your streak alive.</p>
+    <p style="margin:8px 0"><b>The War Map</b> is the USA by state. Tap a state to see the industry sectors inside and how many targets are still undiscovered. Canada, Mexico and the EU are your frontier.</p>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:16px"><button class="btn adv" onclick="closeModal()">Got it</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
 $('#cloudChip').onclick=openCloud;
@@ -1071,6 +1101,7 @@ $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
   await initCloud();
   await reload();
   render();
+  try{if(!localStorage.getItem('sq_seen')){localStorage.setItem('sq_seen','1');setTimeout(openHelp,700);}}catch(e){}
   if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js');}catch(e){}}
 })();
 </script>
