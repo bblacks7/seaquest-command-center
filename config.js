@@ -164,3 +164,91 @@ window.SEAQUEST_TREE = {
     { id:"oth-farmers",   name:"Farmers market & CSA",    note:"Produce and CSA paper bags" }
   ]
 };
+
+// ---- Academy: training modules. Finish the check to earn XP + a badge. (edit freely) ----
+window.SEAQUEST_ACADEMY = [
+  { id:"who", icon:"\u{1F3ED}", title:"Who We Are", xp:60, badge:{i:"\u{1F3ED}",t:"Insider"},
+    points:[
+      "SeaQuest Global is the US sales arm for our own paper factories overseas. We are veteran-owned.",
+      "We make custom paper packaging: shopping bags, boxes, multiwall sacks, and printed packaging.",
+      "Our factories do all printing in-house, including regulated labels, barcodes (GS1/UPC) and track-and-trace.",
+      "We earn on markup, not commission. You are direct sales, not a middleman.",
+      "Reps never quote prices. You gather specs and Brandon prepares the quote."
+    ],
+    quiz:[
+      { q:"How should you describe SeaQuest?", a:["A packaging broker","A reseller","The US sales arm for our own factories"], correct:2 },
+      { q:"Who prepares the price quote?", a:["The rep on the call","Brandon / the quotes team","The factory directly"], correct:1 }
+    ] },
+  { id:"talk", icon:"\u{1F5E3}️", title:"How We Talk About Ourselves", xp:60, badge:{i:"\u{1F5E3}️",t:"On Message"},
+    points:[
+      "Say: we are the US sales arm for our factories worldwide.",
+      "Never say we 'represent', 'broker', or are 'factory-direct'.",
+      "Keep it human and short. No em-dashes. 2 to 3 sentences in emails.",
+      "Do not overstate our accounts, and never name our factory.",
+      "Lead with our own paper manufacturing and sustainability when it helps."
+    ],
+    quiz:[
+      { q:"Which phrase is NOT allowed?", a:["US sales arm for our factories","We represent the factory","Veteran-owned paper company"], correct:1 },
+      { q:"Ideal cold email length?", a:["2 to 3 sentences","3 full paragraphs","One word"], correct:0 }
+    ] },
+  { id:"contact", icon:"\u{1F4DE}", title:"Making Contact", xp:60, badge:{i:"\u{1F4DE}",t:"First Contact"},
+    points:[
+      "The goal of a first cold reach is to find whoever handles packaging or vendor purchasing.",
+      "Use every channel: call, email, and LinkedIn.",
+      "Keep intros short: who you are, what we do, and ask for the right person.",
+      "Use the Email templates and the Ask Claude button to draft fast.",
+      "Always log the touch and set a next step."
+    ],
+    quiz:[
+      { q:"What is the goal of a first cold reach?", a:["Close the sale","Find who handles packaging or purchasing","Quote a price"], correct:1 },
+      { q:"Best practice after every touch?", a:["Forget it","Log it and set a next step","Only email"], correct:1 }
+    ] },
+  { id:"gate", icon:"\u{1F6AA}", title:"Getting Past the Gatekeeper", xp:60, badge:{i:"\u{1F6AA}",t:"Door Opener"},
+    points:[
+      "Receptionists and assistants are allies. Be warm, brief, and confident.",
+      "Ask by role: 'Who handles your packaging or vendor purchasing?'",
+      "Give a one-line reason: we supply custom paper packaging from our own factories.",
+      "Ask for a name, a direct line, and an email.",
+      "If you are blocked, still get a name and follow up by email and LinkedIn."
+    ],
+    quiz:[
+      { q:"How do you treat a gatekeeper?", a:["Push past them","Warm and brief, ask for the right person by role","Hang up"], correct:1 },
+      { q:"What should you leave the call with?", a:["A name, direct line and email","Nothing","A signed order"], correct:0 }
+    ] },
+  { id:"convo", icon:"\u{1F91D}", title:"The Conversation", xp:60, badge:{i:"\u{1F91D}",t:"Closer's Ear"},
+    points:[
+      "Lead with how we help: custom packaging from our own factories, printed in-house.",
+      "Ask about their sizes, volumes, current supplier, and any pain points.",
+      "Listen more than you talk, and take notes in the account.",
+      "Do not quote a price. Offer to 'put a quick quote together'.",
+      "Get the specs: dimensions, paper weight (gsm), quantity, and artwork."
+    ],
+    quiz:[
+      { q:"When they ask for a price, you...", a:["Quote a number on the spot","Offer to put a quick quote together and get specs","End the call"], correct:1 },
+      { q:"Which specs matter most?", a:["Size, gsm, quantity, artwork","Only their name","Their favorite color"], correct:0 }
+    ] },
+  { id:"rules", icon:"✅", title:"Do's and Don'ts", xp:60, badge:{i:"✅",t:"By the Book"},
+    points:[
+      "DO keep it short and human, ask for the buyer, follow up, and log everything.",
+      "DON'T quote prices, that goes through Brandon.",
+      "DON'T say broker, represent, or factory-direct.",
+      "DON'T overstate accounts or name our factory.",
+      "DON'T pitch cannabis product packaging."
+    ],
+    quiz:[
+      { q:"Which is a DON'T?", a:["Follow up","Quote a price yourself","Log the call"], correct:1 },
+      { q:"Naming our factory to a prospect is...", a:["Fine","Not allowed","Required"], correct:1 }
+    ] },
+  { id:"facts", icon:"\u{1F9E0}", title:"Info to Remember", xp:60, badge:{i:"\u{1F9E0}",t:"Sharp Mind"},
+    points:[
+      "Our sweet spot starts around 20,000 units (minimum order).",
+      "China paper bags carry heavy anti-dumping duties, so we source from non-covered origins.",
+      "Our factories handle compliance labels, barcodes, and track-and-trace in-house.",
+      "We sell across the US, Mexico, and Poland/EU, with a rep per market.",
+      "Pricing always goes through Brandon (quotes)."
+    ],
+    quiz:[
+      { q:"Roughly where does our minimum order start?", a:["20,000 units","10 units","1 million units"], correct:0 },
+      { q:"Where do prices come from?", a:["The rep","Brandon / quotes","The prospect"], correct:1 }
+    ] }
+];

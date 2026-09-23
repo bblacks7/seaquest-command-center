@@ -264,6 +264,7 @@ const US_AB_SET=new Set(STATES.map(s=>s.ab));
 const IND_BY_KEY={}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
 const TREE=window.SEAQUEST_TREE||{};
 const NICHE_BY_ID={}; Object.keys(TREE).forEach(ind=>TREE[ind].forEach(n=>NICHE_BY_ID[n.id]={name:n.name,note:n.note,industry:ind}));
+const ACADEMY=window.SEAQUEST_ACADEMY||[];
 const STAGE_IDX={}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
 const REP_BY_ID={}; REPS.forEach(r=>REP_BY_ID[r.id]={...r});
 const SUM_POP=STATES.reduce((a,s)=>a+s.pop,0);
@@ -379,6 +380,10 @@ function bumpQuest(key,n){
   });
   saveQuests(q);
 }
+/* training progress (academy) */
+function loadTrain(){try{return JSON.parse(localStorage.getItem('sq_train')||'{}')}catch(e){return{}}}
+function trainDone(rep,id){const t=loadTrain();return (t[rep]||[]).indexOf(id)>=0;}
+function markTrain(rep,id){const t=loadTrain();t[rep]=t[rep]||[];if(t[rep].indexOf(id)<0)t[rep].push(id);try{localStorage.setItem('sq_train',JSON.stringify(t));}catch(e){}}
 /* niche exploration (research tree) */
 function loadNiches(){try{return JSON.parse(localStorage.getItem('sq_niches')||'[]')}catch(e){return[]}}
 function markNiche(id){if(!id)return;try{const s=new Set(loadNiches());s.add(id);localStorage.setItem('sq_niches',JSON.stringify([...s]));}catch(e){}}
@@ -494,7 +499,54 @@ function render(){ renderConsole(); renderNav();
   else if(v==='hitlist')viewHitList();
   else if(v==='quickplay')viewQuickPlay();
   else if(v==='research')viewResearch();
+  else if(v==='academy')viewAcademy();
   else if(v==='rep')viewRep();
+}
+function viewAcademy(){
+  const me=REP_BY_ID[S.me]||REPS[0];
+  const doneList=ACADEMY.filter(m=>trainDone(me.id,m.id));
+  const totalXP=doneList.reduce((a,m)=>a+m.xp,0);
+  let h=`<h2 class="sec"><span class="dot"></span>Academy</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Learn the SeaQuest playbook. Pass a module's check to earn XP and a badge for <b style="color:var(--teal)">${esc(me.name)}</b>.</div>
+  <div class="panel"><div class="barlab"><span>Training complete</span><b>${doneList.length} / ${ACADEMY.length}</b></div><div class="bar"><i style="width:${(doneList.length/Math.max(1,ACADEMY.length)*100).toFixed(1)}%;background:var(--gold)"></i></div>
+    <div style="font-size:10px;color:var(--dim2);margin-top:5px">${totalXP} XP earned from training so far</div></div>`;
+  h+=`<div class="grid" style="gap:10px;margin-top:12px">`;
+  ACADEMY.forEach(m=>{const d=trainDone(me.id,m.id);
+    h+=`<div class="rep" style="cursor:pointer" onclick="openModule('${m.id}')">
+      <div class="ava" style="width:44px;height:44px;border-color:${d?'var(--gold)':'var(--line)'};font-size:22px">${m.icon}</div>
+      <div class="info"><div class="rn">${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</div>
+        <div class="rm">${m.points.length} key points &middot; ${m.quiz.length}-question check &middot; +${m.xp} XP</div></div>
+      <button class="mini-btn ${d?'':'on'}" onclick="event.stopPropagation();openModule('${m.id}')">${d?'Review':'Start'}</button>
+    </div>`;});
+  h+=`</div>`;
+  h+=`<h2 class="sec"><span class="dot"></span>Training Badges (${doneList.length}/${ACADEMY.length})</h2><div class="badges">`
+    +ACADEMY.map(m=>{const d=trainDone(me.id,m.id);return `<div class="badge2 ${d?'':'lock'}"><div class="bi">${m.badge.i}</div><div><div class="bt">${esc(m.badge.t)}</div><div class="bd">${esc(m.title)}</div></div></div>`;}).join('')+`</div>`;
+  $('#app').innerHTML=h;
+}
+function openModule(id){
+  const m=ACADEMY.find(x=>x.id===id);if(!m)return;const me=REP_BY_ID[S.me]||REPS[0];const d=trainDone(me.id,id);
+  const md=$('#modal');
+  md.innerHTML=`<h3>${m.icon} ${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</h3>
+    <div style="font-size:13px;line-height:1.5;color:var(--tx);margin-top:4px">${m.points.map(p=>`<div style="display:flex;gap:9px;margin:9px 0"><span style="color:var(--teal);font-weight:900">▸</span><span>${esc(p)}</span></div>`).join('')}</div>
+    <div style="font-weight:800;font-size:13px;margin-top:16px;color:var(--gold)">Quick check</div>
+    <div id="quiz">${m.quiz.map((q,qi)=>`<div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--tx);font-size:13px;font-weight:700">${qi+1}. ${esc(q.q)}</label>
+      ${q.a.map((opt,oi)=>`<label style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;cursor:pointer"><input type="radio" name="q${qi}" value="${oi}" style="width:auto;margin:0"> <span>${esc(opt)}</span></label>`).join('')}</div>`).join('')}</div>
+    <div id="quizMsg" style="font-size:12px;margin-top:10px;min-height:16px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="closeModal()">Close</button><button class="btn adv" onclick="submitModule('${id}')">${d?'Check again':'Complete training'}</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+function submitModule(id){
+  const m=ACADEMY.find(x=>x.id===id);if(!m)return;const me=REP_BY_ID[S.me]||REPS[0];
+  let correct=0,answered=0;
+  m.quiz.forEach((q,qi)=>{const sel=document.querySelector('input[name="q'+qi+'"]:checked');if(sel){answered++;if(parseInt(sel.value,10)===q.correct)correct++;}});
+  const msg=$('#quizMsg');
+  if(answered<m.quiz.length){msg.style.color='var(--gold)';msg.textContent='Answer all questions to finish.';return;}
+  if(correct<m.quiz.length){msg.style.color='var(--red)';msg.textContent='Not quite ('+correct+'/'+m.quiz.length+'). Review the points and try again.';return;}
+  const already=trainDone(me.id,id);
+  markTrain(me.id,id);
+  if(!already){addTrainingXP(me.id,m.xp);logAct('Completed training: '+m.title);}
+  closeModal();celebrate();render();
+  toast(already?('✅ Reviewed: '+m.title):('\u{1F393} '+m.badge.t+' badge earned!  +'+m.xp+' XP'));
 }
 function viewResearch(){
   const explored=new Set(loadNiches());
@@ -620,7 +672,7 @@ function renderConsole(){
   setTimeout(()=>{$('#gfill').style.width=Math.max(dpct,dpct>0?1.5:0)+'%';},60);
 }
 function renderNav(){
-  const tabs=[['command','HQ'],['quickplay','Quick Play'],['research','Research'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
+  const tabs=[['command','HQ'],['quickplay','Quick Play'],['research','Research'],['academy','Academy'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
   $('#nav').innerHTML=tabs.map(t=>`<button class="${S.view===t[0]||(t[0]==='map'&&S.view==='territory')?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
 }
 function go(v){S.view=v;if(v!=='territory')S.terr=null;window.scrollTo(0,0);render();}
@@ -1205,6 +1257,9 @@ function viewRep(){
   const earned=badges.filter(b=>b.ok).length;
   h+=`<h2 class="sec"><span class="dot"></span>Achievements (${earned}/${badges.length})</h2><div class="badges">`
     +badges.map(b=>`<div class="badge2 ${b.ok?'':'lock'}"><div class="bi">${b.i}</div><div><div class="bt">${b.t}</div><div class="bd">${b.d}</div></div></div>`).join('')+`</div>`;
+  const tdone=ACADEMY.filter(m=>trainDone(id,m.id));
+  h+=`<h2 class="sec"><span class="dot"></span>Training Badges (${tdone.length}/${ACADEMY.length}) <span style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--dim2);font-size:11px">&middot; <span style="color:var(--teal);cursor:pointer" onclick="go('academy')">open Academy</span></span></h2><div class="badges">`
+    +ACADEMY.map(m=>{const d=trainDone(id,m.id);return `<div class="badge2 ${d?'':'lock'}"><div class="bi">${m.badge.i}</div><div><div class="bt">${esc(m.badge.t)}</div><div class="bd">${esc(m.title)}</div></div></div>`;}).join('')+`</div>`;
   $('#app').innerHTML=h;
 }
 function stMini(v,k){return `<div class="stmini"><div class="v">${v}</div><div class="k">${k}</div></div>`;}
