@@ -329,6 +329,29 @@ function defaultOwner(region){
   return REPS[0].id;
 }
 
+/* ---------- time zones & business hours ---------- */
+const TZ_BY_STATE={
+  CT:'America/New_York',DE:'America/New_York',DC:'America/New_York',FL:'America/New_York',GA:'America/New_York',IN:'America/New_York',KY:'America/New_York',ME:'America/New_York',MD:'America/New_York',MA:'America/New_York',MI:'America/New_York',NH:'America/New_York',NJ:'America/New_York',NY:'America/New_York',NC:'America/New_York',OH:'America/New_York',PA:'America/New_York',RI:'America/New_York',SC:'America/New_York',VT:'America/New_York',VA:'America/New_York',WV:'America/New_York',TN:'America/Chicago',
+  AL:'America/Chicago',AR:'America/Chicago',IL:'America/Chicago',IA:'America/Chicago',KS:'America/Chicago',LA:'America/Chicago',MN:'America/Chicago',MS:'America/Chicago',MO:'America/Chicago',NE:'America/Chicago',ND:'America/Chicago',OK:'America/Chicago',SD:'America/Chicago',TX:'America/Chicago',WI:'America/Chicago',
+  CO:'America/Denver',ID:'America/Denver',MT:'America/Denver',NM:'America/Denver',UT:'America/Denver',WY:'America/Denver',
+  AZ:'America/Phoenix', CA:'America/Los_Angeles',NV:'America/Los_Angeles',OR:'America/Los_Angeles',WA:'America/Los_Angeles',
+  AK:'America/Anchorage',HI:'Pacific/Honolulu'
+};
+const TZ_BY_COUNTRY={Canada:'America/Toronto',Mexico:'America/Mexico_City','European Union':'Europe/Berlin','United Kingdom':'Europe/London','Rest of World':'Asia/Dubai'};
+function terrTZ(terr){return TZ_BY_STATE[terr]||TZ_BY_COUNTRY[terr]||null;}
+function localHour(tz){try{let h=parseInt(new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',hour12:false}).format(new Date()),10);if(h>=24)h-=24;return h;}catch(e){return null;}}
+function localTimeStr(tz){try{return new Intl.DateTimeFormat('en-US',{timeZone:tz,hour:'numeric',minute:'2-digit',hour12:true}).format(new Date());}catch(e){return '';}}
+function localWeekday(tz){try{return new Intl.DateTimeFormat('en-US',{timeZone:tz,weekday:'short'}).format(new Date());}catch(e){return '';}}
+function bizStatus(terr){const tz=terrTZ(terr);if(!tz)return{tz:null,status:'open',str:'',wd:'',terr};const h=localHour(tz);const wd=localWeekday(tz);const weekend=(wd==='Sat'||wd==='Sun');let status;if(weekend)status='closed';else if(h>=8&&h<18)status='open';else if((h>=7&&h<8)||(h>=18&&h<20))status='email';else status='closed';return{tz,status,h,str:localTimeStr(tz),wd,weekend,terr};}
+function tzOffsetMin(tz,date){try{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,hour12:false,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit'}).formatToParts(date).reduce((a,x)=>{a[x.type]=x.value;return a;},{});const asUTC=Date.UTC(+p.year,+p.month-1,+p.day,(+p.hour)%24,+p.minute,+p.second);return (asUTC-date.getTime())/60000;}catch(e){return 0;}}
+function localToUTC(tz,y,mo,d,h,mi){const guess=Date.UTC(y,mo-1,d,h,mi);return guess-tzOffsetMin(tz,new Date(guess))*60000;}
+function localYMDwd(tz,date){const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit',weekday:'short'}).formatToParts(date).reduce((a,x)=>{a[x.type]=x.value;return a;},{});return{y:+p.year,mo:+p.month,d:+p.day,wd:p.weekday};}
+function nextOpenTs(tz){if(!tz)return Date.now();const now=Date.now();for(let i=0;i<9;i++){const probe=new Date(now+i*86400000);const {y,mo,d,wd}=localYMDwd(tz,probe);if(wd==='Sat'||wd==='Sun')continue;const ts=localToUTC(tz,y,mo,d,7,15);if(ts>now+30000)return ts;}return now+3600000;}
+function whenStr(ts,tz){try{return new Intl.DateTimeFormat('en-US',{timeZone:tz||undefined,weekday:'short',hour:'numeric',minute:'2-digit',hour12:true}).format(new Date(ts));}catch(e){return new Date(ts).toLocaleString();}}
+/* scheduled after-hours sends */
+function loadSched(){try{return JSON.parse(localStorage.getItem('sq_sched')||'[]')}catch(e){return[]}}
+function saveSched(a){try{localStorage.setItem('sq_sched',JSON.stringify(a))}catch(e){}}
+
 /* ---------- targets ---------- */
 function stateTarget(ab){const st=STATE_BY_AB[ab];if(!st)return 0;return Math.max(8,Math.round(US_POOL*st.pop/SUM_POP));}
 function territoryTarget(kind,key){
@@ -586,7 +609,7 @@ function qpQueue(){
   let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
   if(S.qp.scope==='me')pool=pool.filter(c=>c.owner===me.id);
   if(S.qp.industry)pool=pool.filter(c=>c.industry===S.qp.industry);
-  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(telHref(c.phone))p+=8;if(c.email)p+=4;return p;};
+  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(bizStatus(c.geo.terr).status==='open')p+=15;if(telHref(c.phone))p+=8;if(c.email)p+=4;return p;};
   return pool.sort((a,b)=>pr(b)-pr(a)||(a.name||'').localeCompare(b.name||''));
 }
 function qpSetInd(k){S.qp.industry=k||null;S.qp.idx=0;render();}
@@ -614,12 +637,12 @@ function qpSlide(c,idx,total){
     <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-weight:700"><span>${idx+1} of ${total}</span><span>${esc(c.geo.terr)} &middot; ${rep.emoji} ${esc(rep.name)}</span></div>
     <div class="bar" style="margin-top:6px"><i style="width:${pc}%;background:var(--teal)"></i></div>
     <div style="font-size:22px;font-weight:900;margin-top:13px;line-height:1.15">${esc(c.name)}</div>
-    <div class="u-meta" style="margin-top:7px"><span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry)}</span><span class="terrpill">${STAGES[sIdx]?STAGES[sIdx].label:''}</span></div>
+    <div class="u-meta" style="margin-top:7px"><span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry)}</span><span class="terrpill">${STAGES[sIdx]?STAGES[sIdx].label:''}</span>${statusPillHTML(c.geo.terr)}</div>
     <div style="margin-top:13px;font-size:14px">${c.contact?('\u{1F464} <b>'+esc(c.contact)+'</b>'+(c.title?' &middot; '+esc(c.title):'')):'<span style="color:var(--dim2)">No contact name yet &mdash; <span style="color:var(--teal);cursor:pointer" onclick="openEdit('+gidx+')">add one</span></span>'}</div>
     ${c.email?`<div style="font-size:13px;color:var(--dim);margin-top:5px">✉️ ${esc(c.email)}</div>`:''}
     ${c.phone?`<div class="hint" style="margin-top:8px">${esc(c.phone)}</div>`:''}
     ${c.nextStep?`<div style="font-size:12px;color:var(--gold);margin-top:8px">⏭️ ${esc(c.nextStep)}</div>`:''}
-    <div style="margin-top:14px">${tel?`<a class="ib call" style="display:flex;font-size:16px;padding:15px" href="${tel}" onclick="trackCall(${gidx})">\u{1F4DE} Call ${esc(prettyTel(tel))}</a>`:`<div class="nocall" style="padding:12px">No number yet</div>`}</div>
+    <div style="margin-top:14px">${callBtnHTML(c,gidx,true)}</div>
     <div class="uacts2" style="margin-top:8px">
       <button class="ib mail" onclick="openEmail(${gidx})">✉️ Email</button>
       <button class="ib edit" onclick="openEdit(${gidx})">✎ Edit</button>
@@ -637,7 +660,7 @@ function viewHitList(){
   const me=REP_BY_ID[S.me]||REPS[0];
   let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
   if(!S.hitAll)pool=pool.filter(c=>c.owner===me.id);
-  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(c.phone&&telHref(c.phone))p+=3;if(c.email)p+=2;return p;};
+  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(bizStatus(c.geo.terr).status==='open')p+=15;if(c.phone&&telHref(c.phone))p+=3;if(c.email)p+=2;return p;};
   pool.sort((a,b)=>pr(b)-pr(a)||(a.name||'').localeCompare(b.name||''));
   const top=pool.slice(0,24);
   let h=`<h2 class="sec"><span class="dot"></span>Today's Hit List</h2>
@@ -699,6 +722,15 @@ function viewCommand(){
   h+=`<h2 class="sec"><span class="dot"></span>Grow Your Book</h2><div class="panel"><div style="display:flex;align-items:center;gap:11px">
     <div style="font-size:26px">✨</div><div style="flex:1;font-size:12px;color:var(--dim)">Use Claude to research new companies, then import the list straight into your book.</div>
     <button class="btn adv sm" onclick="openResearch()">Research</button></div></div>`;
+
+  const sched=loadSched();
+  if(sched.length){
+    h+=`<h2 class="sec"><span class="dot"></span>Scheduled Sends (${sched.length})</h2><div class="panel">`;
+    sched.slice().sort((a,b)=>a.ts-b.ts).forEach(s=>{const due=s.ts<=Date.now();
+      h+=`<div class="rrow"><div class="flag">${due?'\u{1F7E2}':'⏰'}</div><div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">${esc(s.name)}</div><div style="font-size:10px;color:${due?'var(--green)':'var(--dim2)'}">${due?'Ready to send now':('Sends '+esc(whenStr(s.ts,s.tz))+' their time')}</div></div>
+        <button class="mini-btn ${due?'on':''}" onclick="sendSched(${s.made})">Send</button><button class="mini-btn" onclick="rmSched(${s.made})">×</button></div>`;});
+    h+=`</div>`;
+  }
 
   /* SQUAD */
   h+=`<h2 class="sec"><span class="dot"></span>Your Team &mdash; tap a rep for their profile</h2><div class="grid" style="gap:10px">`;
@@ -779,21 +811,24 @@ function viewBook(id){S.filter={terr:null,industry:null,stage:null,owner:id,q:''
 function viewMap(){
   const g=byTerr();
   let h=`<h2 class="sec"><span class="dot"></span>United States &mdash; War Map</h2>
-  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 8px">Each state is a territory. Tap to see the sectors within, or jump to a board:</div>`;
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 4px">Each state is a territory. Tap to see the sectors within, or jump to a board:</div>
+  <div style="font-size:11px;color:var(--dim2);margin:0 4px 8px">\u{1F534} Red = after hours there (before 8am / after 6pm local). It sweeps across the map as the day moves.</div>`;
   h+=`<div class="subtabs">`+[['prospect','Prospects'],['researched','Researched'],['contacted','Contacted'],['convo','In Convo'],['won','Won'],['rejected','Rejected']].map(t=>`<button onclick="stageBoard('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
   h+=`<div class="panel"><div class="maprow">`;
   const cells=[];
   STATES.forEach(st=>{
     const m=metricsFor(g[st.ab]||[]);const t=stateTarget(st.ab);const col=terrColor(m,t);
     const ctrl=t?Math.min(100,m.contacted/t*100):0;
-    cells.push(`<div class="tile" style="grid-row:${st.rc[0]+1};grid-column:${st.rc[1]+1};background:${col.bg};border-color:${col.bd}" onclick="openState('${st.ab}')" title="${st.name}">
+    const bs=bizStatus(st.ab);const closed=bs.status!=='open';
+    const tbg=closed?'rgba(150,22,22,.34)':col.bg;const tbd=closed?'rgba(255,80,80,.55)':col.bd;
+    cells.push(`<div class="tile" style="grid-row:${st.rc[0]+1};grid-column:${st.rc[1]+1};background:${tbg};border-color:${tbd}" onclick="openState('${st.ab}')" title="${st.name} - ${bs.str} ${closed?'(after hours)':'(open)'}">
       ${m.known?`<div class="badge" style="background:${col.fill};color:${m.won>0?'#3a2a00':'#04121a'}">${m.known}</div>`:''}
-      <div class="ab" style="color:${col.fg}">${st.ab}</div>
+      <div class="ab" style="color:${closed?'#ff9a9a':col.fg}">${st.ab}</div>
       <div class="mini"><i style="width:${Math.max(ctrl,m.known?12:0)}%;background:${col.fill}"></i></div></div>`);
   });
   h+=cells.join('')+`</div>
   <div class="legend"><span><i style="background:#233043"></i>Unexplored</span><span><i style="background:#2f80ed"></i>Scouted</span>
-  <span><i style="background:#22c58b"></i>Contacted</span><span><i style="background:#ffd23f"></i>Won</span><span><i style="background:#ff4d4f"></i>Resistance</span></div></div>`;
+  <span><i style="background:#22c58b"></i>Contacted</span><span><i style="background:#ffd23f"></i>Won</span><span><i style="background:#ff4d4f"></i>Resistance</span><span><i style="background:rgba(150,22,22,.8)"></i>After hours</span></div></div>`;
 
   const ranked=STATES.map(st=>({st,m:metricsFor(g[st.ab]||[]),t:stateTarget(st.ab)})).filter(x=>x.m.known>0).sort((a,b)=>b.m.contacted-a.m.contacted||b.m.known-a.m.known);
   if(ranked.length){h+=`<h2 class="sec"><span class="dot"></span>Active Fronts</h2><div class="panel">`;
@@ -895,6 +930,28 @@ function viewPipeline(){
 }
 let _pt;function debounceP(){clearTimeout(_pt);_pt=setTimeout(render,220);}
 
+/* ---------- business-hours UI helpers ---------- */
+function statusPillHTML(terr){
+  const b=bizStatus(terr);if(!b.tz)return '';
+  const col=b.status==='open'?'var(--green)':(b.status==='email'?'var(--gold)':'var(--red)');
+  const dot=b.status==='open'?'\u{1F7E2}':(b.status==='email'?'\u{1F7E1}':'\u{1F534}');
+  const lab=b.status==='open'?'open':(b.status==='email'?'email hrs':'after hrs');
+  return `<span class="pill" style="border-color:${col}55;color:${col}">${dot} ${esc(b.str)} · ${lab}</span>`;
+}
+function preCall(i){const c=S.companies[i];if(!c)return true;const b=bizStatus(c.geo.terr);if(b.tz&&b.status!=='open'){if(!confirm('It is '+b.str+' in '+c.geo.terr+' (after hours). Call anyway?'))return false;}trackCall(i);return true;}
+function callBtnHTML(c,gidx,big){
+  const tel=telHref(c.phone);if(!tel)return big?`<div class="nocall" style="padding:12px">No number yet</div>`:'';
+  const b=bizStatus(c.geo.terr);const after=b.tz&&b.status!=='open';
+  const style=big?'display:flex;font-size:16px;padding:15px':'';
+  const warn=after?';color:var(--red);border-color:rgba(255,77,79,.45);background:rgba(255,77,79,.10)':'';
+  return `<a class="ib call" style="${style}${warn}" href="${tel}" onclick="return preCall(${gidx})">\u{1F4DE} ${after?'Call (after hrs)':'Call'}${big?' '+esc(prettyTel(tel)):''}</a>`;
+}
+function schedEmail(idx){const c=S.companies[idx];const to=$('#e_to').value.trim();const sub=$('#e_sub').value;const body=$('#e_body').value;const tz=terrTZ(c.geo.terr);const ts=nextOpenTs(tz);
+  const list=loadSched();list.push({name:c.name,to,subject:sub,body,ts,tz,terr:c.geo.terr,made:Date.now()});saveSched(list);
+  bumpStat(S.me,'emails');logAct('Scheduled email to '+c.name);closeModal();render();toast('⏰ Queued for '+whenStr(ts,tz)+' their time');}
+function sendSched(made){const list=loadSched();const i=list.findIndex(x=>x.made===made);if(i<0)return;const s=list[i];const href='mailto:'+encodeURIComponent(s.to)+'?subject='+encodeURIComponent(s.subject)+'&body='+encodeURIComponent(s.body);const a=document.createElement('a');a.href=href;a.click();list.splice(i,1);saveSched(list);logAct('Sent scheduled email to '+s.name);render();toast('Opening mail for '+s.name);}
+function rmSched(made){const list=loadSched();const i=list.findIndex(x=>x.made===made);if(i<0)return;list.splice(i,1);saveSched(list);render();toast('Removed from queue');}
+
 /* ---------- unit card ---------- */
 function unitCard(c){
   const idx=S.companies.indexOf(c);
@@ -915,7 +972,7 @@ function unitCard(c){
   const contactLine=cbits.length?`<div class="contactline">${cbits.map(x=>`<span>${x}</span>`).join('')}</div>`:'';
   const hint=(c.phone && String(c.phone).replace(/[\d\s().+\/\-]/g,'').length>2)?`<div class="hint">${esc(c.phone)}</div>`:'';
   const tools=`<div class="uacts2">
-    ${tel?`<a class="ib call" href="${tel}" onclick="trackCall(${idx})">\u{1F4DE} Call</a>`:''}
+    ${callBtnHTML(c,idx,false)}
     <button class="ib mail" onclick="openEmail(${idx})">✉️ Email</button>
     <button class="ib edit" onclick="openEdit(${idx})">✎ Edit</button>
   </div>`;
@@ -925,6 +982,7 @@ function unitCard(c){
       <div class="u-meta">
         <span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry||'')}</span>
         <span class="terrpill">${esc(c.geo.terr)}</span>
+        ${statusPillHTML(c.geo.terr)}
         <span class="owner" style="border-color:${rep.color}66;color:${rep.color}" onclick="openOwner(${idx})">${rep.emoji} ${esc(rep.name)}</span>
       </div></div>
       <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:${fillCol}">${stageLabel}</div></div>
@@ -1158,16 +1216,23 @@ function fillTpl(str,c,rep){return String(str).replace(/\[Name\]/g,c.contact||'t
 function trackCall(i){const c=S.companies[i];if(!c)return;bumpStat(S.me,'calls');logAct('Called '+c.name);}
 function openEmail(idx){
   const c=S.companies[idx];if(!c)return;const rep=REP_BY_ID[S.me]||REPS[0];
+  const b=bizStatus(c.geo.terr);const quiet=b.tz&&b.status==='closed';
+  const schedStr=b.tz?whenStr(nextOpenTs(b.tz),b.tz):'';
+  const banner=b.tz?(quiet
+    ?`<div style="font-size:12px;color:var(--red);margin-top:8px;background:rgba(255,77,79,.08);border:1px solid rgba(255,77,79,.3);border-radius:10px;padding:9px">\u{1F534} It's ${esc(b.str)} in ${esc(c.geo.terr)} (after hours). Best to schedule for <b>${esc(schedStr)}</b> their time.</div>`
+    :`<div style="font-size:11px;color:var(--dim);margin-top:8px">${b.status==='open'?'\u{1F7E2}':'\u{1F7E1}'} It's ${esc(b.str)} in ${esc(c.geo.terr)}.</div>`):'';
   const m=$('#modal');
   m.innerHTML=`<h3>Email ${esc(c.name)}</h3>
     <div style="font-size:12px;color:var(--dim)">Pick an outline, tweak it, then open your mail app, copy it, or have Claude write it.</div>
+    ${banner}
     <div class="field"><label>To</label><input id="e_to" type="email" value="${esc(c.email||'')}" placeholder="name@company.com"></div>
     <div class="field"><label>Template (by who you're contacting)</label>
       <select id="e_tpl" onchange="refillEmail(${idx})">${EMAIL_TPLS.map(t=>`<option value="${t.id}">${t.label}</option>`).join('')}</select></div>
     <div class="field"><label>Subject</label><input id="e_sub"></div>
     <div class="field"><label>Message</label><textarea id="e_body" rows="8"></textarea></div>
     <div class="uacts2" style="margin-top:14px">
-      <button class="ib mail" onclick="sendMail(${idx})">✉️ Open in mail app</button>
+      ${quiet?`<button class="ib" style="color:var(--gold);border-color:#ffd23f55;background:#ffd23f14" onclick="schedEmail(${idx})">⏰ Schedule ${esc(schedStr)}</button>`:''}
+      <button class="ib mail" onclick="sendMail(${idx})">✉️ ${quiet?'Send now':'Open in mail app'}</button>
       <button class="ib" onclick="copyEmail()">\u{1F4CB} Copy</button>
       <button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="claudeEmail(${idx})">✨ Ask Claude</button>
     </div>
@@ -1355,6 +1420,12 @@ $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
   render();
   try{if(!localStorage.getItem('sq_seen')){localStorage.setItem('sq_seen','1');setTimeout(openHelp,700);}}catch(e){}
   if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js');}catch(e){}}
+  setInterval(()=>{
+    let list=loadSched(),changed=false;
+    list.forEach(s=>{if(!s.notified&&s.ts<=Date.now()){s.notified=true;changed=true;try{if(navigator.vibrate)navigator.vibrate(30);}catch(e){}toast('⏰ Time to send: '+s.name);}});
+    if(changed)saveSched(list);
+    if(!$('#modalBg').classList.contains('show')&&['map','quickplay','hitlist','command'].indexOf(S.view)>=0)render();
+  },60000);
 })();
 </script>
 </body>
