@@ -262,6 +262,8 @@ const REPS=window.SEAQUEST_REPS||[{id:"me",name:"Me",role:"Commander",market:"",
 const STATE_BY_AB={}; STATES.forEach(s=>STATE_BY_AB[s.ab]=s);
 const US_AB_SET=new Set(STATES.map(s=>s.ab));
 const IND_BY_KEY={}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
+const TREE=window.SEAQUEST_TREE||{};
+const NICHE_BY_ID={}; Object.keys(TREE).forEach(ind=>TREE[ind].forEach(n=>NICHE_BY_ID[n.id]={name:n.name,note:n.note,industry:ind}));
 const STAGE_IDX={}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
 const REP_BY_ID={}; REPS.forEach(r=>REP_BY_ID[r.id]={...r});
 const SUM_POP=STATES.reduce((a,s)=>a+s.pop,0);
@@ -288,8 +290,8 @@ function deriveStage(status){
   if(/\bwon\b|customer|closed win|ordered|purchase order/.test(s)) return 'won';
   if(/calling|in conversation|engaged|replied|responded|meeting|quote sent|quoting|call scheduled|demo/.test(s)) return 'convo';
   if(/email|message sent|invite sent|linkedin|vm |voicemail|dm |reached|contacted|sent/.test(s)) return 'reached';
-  if(/to call|ready|has contact|named|warm/.test(s)) return 'researched';
-  if(/research|need contact|prospect|to research/.test(s)) return 'prospect';
+  if(/researched|to call|ready|has contact|named|warm/.test(s)) return 'researched';
+  if(/to research|need contact|prospect|new lead/.test(s)) return 'prospect';
   return 'researched';
 }
 function isRejected(status){ return /reject|declin|lost|not interested|no interest/.test((status||'').toLowerCase()); }
@@ -377,6 +379,10 @@ function bumpQuest(key,n){
   });
   saveQuests(q);
 }
+/* niche exploration (research tree) */
+function loadNiches(){try{return JSON.parse(localStorage.getItem('sq_niches')||'[]')}catch(e){return[]}}
+function markNiche(id){if(!id)return;try{const s=new Set(loadNiches());s.add(id);localStorage.setItem('sq_niches',JSON.stringify([...s]));}catch(e){}}
+function nicheExplored(id){return loadNiches().indexOf(id)>=0;}
 
 /* ---------- model ---------- */
 function extractEmail(){const s=Array.prototype.filter.call(arguments,Boolean).join(' ');const m=s.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/);return m?m[0]:'';}
@@ -392,11 +398,12 @@ function buildModel(list){
     const contact=pick(e.contact,raw.contact);
     const title=pick(e.title,raw.title);
     const nextStep=pick(e.nextStep,raw.nextStep);
+    const niche=pick(e.niche,raw.niche);
     const email=pick(e.email,raw.email)||extractEmail(notes,phone);
     const geo=parseGeo(location);
     const rej=(typeof raw._rejected==='boolean')?raw._rejected:isRejected(raw.status);
     const owner=owners[raw.name]||raw.owner||defaultOwner(geo.region);
-    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,
+    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,niche,
       geo,rejected:rej,stage:deriveStage(raw.status),owner};
   });
 }
@@ -434,7 +441,9 @@ async function addCompany(o){
   o.owner=o.owner||S.me;
   if(S.cloud&&sb){try{await sb.from('companies').insert({name:o.name,industry:o.industry,location:o.location,status:o.status,notes:o.notes,phone_channel:o.phone});}catch(e){}}
   else{const ov=loadOv();ov.added=ov.added||[];ov.added.push(o);saveOv(ov);}
-  const ov=loadOv();ov.owners=ov.owners||{};ov.owners[o.name]=o.owner;saveOv(ov);
+  const ov=loadOv();ov.owners=ov.owners||{};ov.owners[o.name]=o.owner;ov.edits=ov.edits||{};
+  if(o.niche||o.contact||o.title||o.email||o.nextStep)ov.edits[o.name]=Object.assign({},ov.edits[o.name]||{},{niche:o.niche,contact:o.contact,title:o.title,email:o.email,nextStep:o.nextStep});
+  saveOv(ov);
   await reload();
 }
 function setOwner(idx,id){
@@ -484,8 +493,42 @@ function render(){ renderConsole(); renderNav();
   else if(v==='sectors')viewSectors();
   else if(v==='hitlist')viewHitList();
   else if(v==='quickplay')viewQuickPlay();
+  else if(v==='research')viewResearch();
   else if(v==='rep')viewRep();
 }
+function viewResearch(){
+  const explored=new Set(loadNiches());
+  const counts={};S.companies.forEach(c=>{if(c.niche)counts[c.niche]=(counts[c.niche]||0)+1;});
+  const allNiches=Object.keys(NICHE_BY_ID);
+  const activeCount=allNiches.filter(id=>counts[id]).length;
+  const exploredCount=allNiches.filter(id=>explored.has(id)||counts[id]).length;
+  let h=`<h2 class="sec"><span class="dot"></span>Research Lab</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Have Claude research companies, then grow into new paper-packaging niches. Green = you're in it, blue = explored, locked = wide open.</div>`;
+  h+=`<div class="panel" style="display:flex;align-items:center;gap:11px"><div style="font-size:26px">✨</div><div style="flex:1;font-size:12px;color:var(--dim)">Research any sector, or paste a list Claude gave you.</div><button class="btn adv sm" onclick="openResearch()">Open</button></div>`;
+  h+=`<div class="panel" style="margin-top:12px"><div class="barlab"><span>Niches you're in</span><b>${activeCount} / ${allNiches.length}</b></div><div class="bar"><i style="width:${(activeCount/Math.max(1,allNiches.length)*100).toFixed(1)}%;background:var(--purple)"></i></div>
+    <div style="font-size:10px;color:var(--dim2);margin-top:5px">${exploredCount} explored &middot; ${allNiches.length-exploredCount} still to discover</div></div>`;
+  INDUSTRIES.forEach(ind=>{
+    const niches=TREE[ind.key];if(!niches||!niches.length)return;
+    const act=niches.filter(n=>counts[n.id]).length;
+    h+=`<h2 class="sec"><span class="dot"></span>${ind.icon} ${esc(ind.key)} <span style="font-weight:700;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">${act}/${niches.length}</span></h2><div class="panel" style="padding:6px 10px">`;
+    niches.forEach((n,ni)=>{
+      const cnt=counts[n.id]||0;const isActive=cnt>0;const isExpl=explored.has(n.id);
+      const col=isActive?ind.color:(isExpl?'var(--blue)':'var(--line)');
+      const badge=isActive?`<span style="color:${ind.color};font-weight:800">${cnt} in book</span>`:(isExpl?'<span style="color:var(--blue)">explored</span>':'<span style="color:var(--dim2)">\u{1F512} undiscovered</span>');
+      h+=`<div style="display:flex;align-items:center;gap:10px;padding:9px 0;${ni<niches.length-1?'border-bottom:1px solid var(--line)':''}">
+        <div style="width:7px;height:34px;border-radius:4px;background:${col};flex:0 0 auto"></div>
+        <div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${esc(n.name)}</div>
+          <div style="font-size:10px;color:var(--dim)">${esc(n.note)} &middot; ${badge}</div></div>
+        <button class="mini-btn" title="Research with Claude" onclick="researchNiche('${n.id}')">✨</button>
+        <button class="mini-btn" title="Add account" onclick="addNiche('${n.id}')">+</button>
+      </div>`;
+    });
+    h+=`</div>`;
+  });
+  $('#app').innerHTML=h;
+}
+function researchNiche(id){const n=NICHE_BY_ID[id];if(!n)return;markNiche(id);if(S.view==='research')render();openResearch({industry:n.industry,niche:id});}
+function addNiche(id){const n=NICHE_BY_ID[id];if(!n)return;markNiche(id);if(S.view==='research')render();openAdd({industry:n.industry,niche:id});}
 function qpQueue(){
   const me=REP_BY_ID[S.me]||REPS[0];
   let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
@@ -577,7 +620,7 @@ function renderConsole(){
   setTimeout(()=>{$('#gfill').style.width=Math.max(dpct,dpct>0?1.5:0)+'%';},60);
 }
 function renderNav(){
-  const tabs=[['command','HQ'],['quickplay','Quick Play'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
+  const tabs=[['command','HQ'],['quickplay','Quick Play'],['research','Research'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
   $('#nav').innerHTML=tabs.map(t=>`<button class="${S.view===t[0]||(t[0]==='map'&&S.view==='territory')?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
 }
 function go(v){S.view=v;if(v!=='territory')S.terr=null;window.scrollTo(0,0);render();}
@@ -599,6 +642,11 @@ function viewCommand(){
       <div style="font-size:10px;color:var(--dim2);margin-top:3px">${prog}/${Q.goal} &middot; +${Q.xp} XP${done?' &middot; ✅':''}</div></div>
       <div class="pc">${done?'✅':pc.toFixed(0)+'%'}</div></div>`;});
   h+=`<div style="font-size:11px;color:var(--dim2);margin-top:8px">Complete quests to earn training XP for <b style="color:var(--teal)">${esc((REP_BY_ID[S.me]||REPS[0]).name)}</b> and keep your streak alive.</div></div>`;
+
+  /* GROW YOUR BOOK */
+  h+=`<h2 class="sec"><span class="dot"></span>Grow Your Book</h2><div class="panel"><div style="display:flex;align-items:center;gap:11px">
+    <div style="font-size:26px">✨</div><div style="flex:1;font-size:12px;color:var(--dim)">Use Claude to research new companies, then import the list straight into your book.</div>
+    <button class="btn adv sm" onclick="openResearch()">Research</button></div></div>`;
 
   /* SQUAD */
   h+=`<h2 class="sec"><span class="dot"></span>Your Team &mdash; tap a rep for their profile</h2><div class="grid" style="gap:10px">`;
@@ -752,7 +800,7 @@ function viewTerritory(){
   const tabs=[['all','All']].concat(STAGES.map(s=>[s.key,s.short])).concat([['rejected','Rejected']]);
   h+=`<h2 class="sec" id="unitsHead"><span class="dot"></span>Accounts in ${esc(name)}</h2>`;
   h+=`<div class="subtabs">`+tabs.map(t=>`<button class="${S.terrTab===t[0]?'on':''}" onclick="setTerrTab('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
-  h+=`<button class="btn adv" style="margin:0 0 12px;max-width:280px" onclick="addHere()">➕ Add account in ${esc(name)}${S.terrSector?' &middot; '+esc(S.terrSector):''}</button>`;
+  h+=`<div class="uacts2" style="margin:0 0 12px"><button class="ib" style="color:#04121a;background:linear-gradient(135deg,var(--teal),#37d9bb);border-color:transparent" onclick="addHere()">➕ Add here</button><button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="researchHere()">✨ Research with Claude</button></div>`;
   let ulist=list.slice();
   if(S.terrSector)ulist=ulist.filter(c=>c.industry===S.terrSector);
   if(S.terrTab!=='all'){if(S.terrTab==='rejected')ulist=ulist.filter(c=>c.rejected);else ulist=ulist.filter(c=>!c.rejected&&c.stage===S.terrTab);}
@@ -811,6 +859,7 @@ function unitCard(c){
   if(c.contact)cbits.push(`\u{1F464} ${esc(c.contact)}${c.title?' &middot; '+esc(c.title):''}`);
   if(c.email)cbits.push(`✉️ ${esc(c.email)}`);
   if(c.nextStep)cbits.push(`⏭️ ${esc(c.nextStep)}`);
+  if(c.niche&&NICHE_BY_ID[c.niche])cbits.push(`\u{1F333} ${esc(NICHE_BY_ID[c.niche].name)}`);
   const contactLine=cbits.length?`<div class="contactline">${cbits.map(x=>`<span>${x}</span>`).join('')}</div>`:'';
   const hint=(c.phone && String(c.phone).replace(/[\d\s().+\/\-]/g,'').length>2)?`<div class="hint">${esc(c.phone)}</div>`:'';
   const tools=`<div class="uacts2">
@@ -904,7 +953,10 @@ function openOwner(idx){
 function openAdd(prefill){
   prefill=prefill||{};
   const m=$('#modal');
-  m.innerHTML=`<h3>Add Account</h3><div style="font-size:12px;color:var(--dim)">Add a company to your book.</div>
+  m.innerHTML=`<h3>Add Account</h3><div style="font-size:12px;color:var(--dim)">Add one below, or research a whole batch with Claude.</div>
+  <div class="uacts2" style="margin-top:10px"><button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="openResearch()">✨ Find a batch with Claude</button></div>
+  ${prefill.niche&&NICHE_BY_ID[prefill.niche]?`<div style="font-size:11px;color:var(--purple);margin-top:8px">\u{1F333} Niche: ${esc(NICHE_BY_ID[prefill.niche].name)}</div>`:''}
+  <input type="hidden" id="a_niche" value="${esc(prefill.niche||'')}">
   <div class="field"><label>Company name *</label><input id="a_name" placeholder="Acme Foods"></div>
   <div class="field"><label>Owner (rep)</label><select id="a_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===(prefill.owner||S.me)?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
   <div class="field"><label>Sector</label><select id="a_ind">${INDUSTRIES.map(i=>`<option ${i.key===prefill.industry?'selected':''}>${i.key}</option>`).join('')}</select></div>
@@ -922,10 +974,92 @@ function addHere(){const t=S.terr;if(!t)return;const loc=t.kind==='state'?(STATE
 function closeModal(){$('#modalBg').classList.remove('show');}
 async function submitAdd(){
   const name=$('#a_name').value.trim();if(!name){toast('Name required');return;}
+  const nEl=$('#a_niche');const niche=nEl?nEl.value:'';
   const o={name,owner:$('#a_owner').value,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),
-    contact:$('#a_contact').value.trim(),title:$('#a_title').value.trim(),email:$('#a_email').value.trim(),
+    contact:$('#a_contact').value.trim(),title:$('#a_title').value.trim(),email:$('#a_email').value.trim(),niche,
     status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
+  if(niche)markNiche(niche);
   closeModal();await addCompany(o);logAct('Added '+name);render();toast('✅ '+name+' added for '+REP_BY_ID[o.owner].name);
+}
+
+/* ---------- research with Claude -> import to CRM ---------- */
+function openResearch(prefill){
+  prefill=prefill||{};
+  const m=$('#modal');
+  m.innerHTML=`<h3>✨ Find companies with Claude</h3>
+  <div style="font-size:12px;color:var(--dim)">Step 1: pick what to research and open Claude. Step 2: paste Claude's list back here and it drops straight into your book.</div>
+  ${prefill.niche&&NICHE_BY_ID[prefill.niche]?`<div style="font-size:12px;color:var(--purple);margin-top:8px">\u{1F333} Niche focus: <b>${esc(NICHE_BY_ID[prefill.niche].name)}</b> &middot; ${esc(NICHE_BY_ID[prefill.niche].note)}</div>`:''}
+  <input type="hidden" id="r_niche" value="${esc(prefill.niche||'')}">
+  <div class="field"><label>Sector</label><select id="r_ind"><option value="">Any sector we sell into</option>${INDUSTRIES.map(i=>`<option ${i.key===prefill.industry?'selected':''}>${i.key}</option>`).join('')}</select></div>
+  <div class="field"><label>Location (optional)</label><input id="r_loc" value="${esc(prefill.location||'')}" placeholder="e.g. Texas, or Southeast US"></div>
+  <div class="field"><label>How many</label><select id="r_n"><option>15</option><option>10</option><option>20</option><option>25</option></select></div>
+  <div class="uacts2" style="margin-top:12px"><button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="launchResearch()">✨ Copy prompt &amp; open Claude</button></div>
+  <div class="field" style="margin-top:18px"><label>Step 2: paste Claude's results</label><textarea id="r_paste" rows="6" placeholder="Paste the list Claude gives you here..."></textarea></div>
+  <div style="font-size:11px;color:var(--dim2);margin-top:6px">Format per line: Company | Sector | City, ST | Contact | Title | Email | Phone | Note</div>
+  <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Close</button><button class="btn adv" onclick="importResearch()">Import to CRM</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+function researchHere(){const t=S.terr;if(!t)return;const loc=t.kind==='state'?(STATE_BY_AB[t.key]?STATE_BY_AB[t.key].name:t.key):t.key;openResearch({location:loc,industry:S.terrSector||undefined});}
+function researchPrompt(){
+  const ind=$('#r_ind').value,loc=$('#r_loc').value.trim(),n=$('#r_n').value;
+  const niche=$('#r_niche')?$('#r_niche').value:'';const nObj=NICHE_BY_ID[niche];
+  const where=loc?(' in '+loc):'';
+  const sector=ind?ind:'any sector we sell into (QSR/restaurant, foodservice distribution, packaging, coffee/beverage, industrial and ag sacks, nicotine/tobacco, ammunition)';
+  const focus=nObj?(" that specifically need "+nObj.name+" ("+nObj.note+")"):" that buy paper packaging at scale (brands, manufacturers, retailers or distributors)";
+  return "I'm a sales rep for SeaQuest Global, a veteran-owned company that supplies custom paper packaging (shopping bags, boxes, sacks, printed packaging) from our own factories. Help me build a prospecting list.\n\n"
+   +"Find "+n+" real companies in "+sector+where+focus+". Give real, current contact info where you can, and prefer procurement or packaging contacts.\n\n"
+   +"Output ONLY the list, one company per line, in this EXACT pipe-delimited format, with no header row and no other text:\n\n"
+   +"Company Name | Sector | City, ST | Contact name | Title | Email | Phone | One short note\n\n"
+   +"Leave a field blank if unknown but keep the pipes. Example:\nAcme Snacks | QSR / Restaurant | Austin, TX | Jane Doe | Procurement Lead | jane@acme.com | (512) 555-0100 | 200+ locations";
+}
+function launchResearch(){const niche=$('#r_niche')?$('#r_niche').value:'';if(niche)markNiche(niche);askClaude(researchPrompt());}
+function parseResearch(text){
+  const out=[];
+  String(text).split(/\r?\n/).forEach(raw=>{
+    let l=raw.trim();
+    if(!l.includes('|'))return;
+    if(/^[-\s|:]+$/.test(l))return;                 // markdown separator row
+    let parts=l.split('|').map(s=>s.trim());
+    // drop leading empty cell from markdown tables (| a | b |)
+    if(parts.length&&parts[0]==='')parts.shift();
+    if(parts.length&&parts[parts.length-1]==='')parts.pop();
+    let name=(parts[0]||'').replace(/^[-*\d.\)\s]+/,'').replace(/\*\*/g,'').trim();
+    if(!name)return;
+    if(/^company\s*name$/i.test(name)||/^company$/i.test(name))return; // header
+    out.push({name,sector:parts[1]||'',location:parts[2]||'',contact:parts[3]||'',title:parts[4]||'',email:parts[5]||'',phone:parts[6]||'',note:parts[7]||''});
+  });
+  return out;
+}
+async function addCompaniesBulk(objs){
+  objs.forEach(o=>o.owner=o.owner||S.me);
+  if(S.cloud&&sb){try{await sb.from('companies').insert(objs.map(o=>({name:o.name,industry:o.industry,location:o.location,status:o.status,notes:o.notes,phone_channel:o.phone})));}catch(e){}}
+  const ov=loadOv();ov.added=ov.added||[];ov.owners=ov.owners||{};ov.edits=ov.edits||{};
+  objs.forEach(o=>{ if(!S.cloud)ov.added.push(o); ov.owners[o.name]=o.owner;
+    if(o.email||o.contact||o.title||o.notes||o.niche){ov.edits[o.name]=Object.assign({},ov.edits[o.name]||{},{email:o.email,contact:o.contact,title:o.title,notes:o.notes,niche:o.niche});}});
+  saveOv(ov);
+  await reload();
+}
+async function importResearch(){
+  const text=$('#r_paste').value||'';const chosen=$('#r_ind').value;
+  const niche=$('#r_niche')?$('#r_niche').value:'';const nInd=NICHE_BY_ID[niche]?NICHE_BY_ID[niche].industry:'';
+  const rows=parseResearch(text);
+  if(!rows.length){toast("Paste Claude's list first");return;}
+  const existing=new Set(S.companies.map(c=>(c.name||'').toLowerCase()));
+  const objs=[];let skipped=0;
+  rows.forEach(r=>{
+    const key=r.name.toLowerCase();
+    if(existing.has(key)){skipped++;return;}
+    existing.add(key);
+    let ind=INDUSTRIES.find(i=>i.key.toLowerCase()===(r.sector||'').toLowerCase())||INDUSTRIES.find(i=>(r.sector||'').toLowerCase().includes(i.key.split(' ')[0].toLowerCase()));
+    const industry=ind?ind.key:(nInd||chosen||'Prospecting / Other');
+    objs.push({name:r.name,owner:S.me,industry,location:r.location,contact:r.contact,title:r.title,email:r.email,phone:r.phone,notes:r.note,niche,status:statusForStage('researched')});
+  });
+  if(!objs.length){toast('Those '+rows.length+' are already in your book');return;}
+  if(niche)markNiche(niche);
+  closeModal();
+  await addCompaniesBulk(objs);
+  logAct('Imported '+objs.length+' companies from Claude');render();
+  toast('✅ Added '+objs.length+' companies'+(skipped?(' ('+skipped+' dupes skipped)'):''));
 }
 async function signIn(){/* reserved for cloud */}
 

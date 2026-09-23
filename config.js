@@ -9,14 +9,15 @@ window.SEAQUEST_CONFIG = {
 
 // ---- Industry sectors we sell into (share of a territory's target pool) ----
 window.SEAQUEST_INDUSTRIES = [
-  { key: "QSR / Restaurant",        weight: 0.30, color: "#ff7a45", icon: "\u{1F354}" },
-  { key: "Foodservice Distributor", weight: 0.15, color: "#36cfc9", icon: "\u{1F69A}" },
-  { key: "Packaging Channel",       weight: 0.15, color: "#9254de", icon: "\u{1F4E6}" },
-  { key: "Coffee / Beverage",       weight: 0.12, color: "#b37feb", icon: "☕" },
-  { key: "Nicotine / Tobacco",      weight: 0.10, color: "#ffc53d", icon: "\u{1F6AC}" },
+  { key: "QSR / Restaurant",        weight: 0.24, color: "#ff7a45", icon: "\u{1F354}" },
+  { key: "Foodservice Distributor", weight: 0.14, color: "#36cfc9", icon: "\u{1F69A}" },
+  { key: "Packaging Channel",       weight: 0.13, color: "#9254de", icon: "\u{1F4E6}" },
+  { key: "Coffee / Beverage",       weight: 0.10, color: "#b37feb", icon: "☕" },
+  { key: "Industrial & Ag Sacks",   weight: 0.12, color: "#c08457", icon: "\u{1F9F1}" },
+  { key: "Nicotine / Tobacco",      weight: 0.08, color: "#ffc53d", icon: "\u{1F6AC}" },
   { key: "Ammunition",              weight: 0.06, color: "#ff4d4f", icon: "\u{1F3AF}" },
   { key: "Enterprise / Logistics",  weight: 0.05, color: "#40a9ff", icon: "\u{1F3E2}" },
-  { key: "Prospecting / Other",     weight: 0.07, color: "#8c8c8c", icon: "\u{1F9ED}" }
+  { key: "Prospecting / Other",     weight: 0.08, color: "#8c8c8c", icon: "\u{1F9ED}" }
 ];
 
 // ---- Pipeline stages: a company (your "unit") advances left to right; rejected = red ----
@@ -102,3 +103,64 @@ window.SEAQUEST_STATES = [
   { ab:"WI", name:"Wisconsin",      pop:5.89, rc:[2,6] },
   { ab:"WY", name:"Wyoming",        pop:0.58, rc:[3,2] }
 ];
+
+// ---- Research Tree: paper-packaging niches inside each sector (edit/add freely) ----
+window.SEAQUEST_TREE = {
+  "QSR / Restaurant": [
+    { id:"qsr-carryout-bags", name:"Takeout & carryout bags",  note:"Kraft SOS and handled shopping bags" },
+    { id:"qsr-food-boxes",    name:"Food boxes & clamshells",  note:"Kraft meal boxes, burger clamshells" },
+    { id:"qsr-cup-carriers",  name:"Drink carriers & trays",   note:"Molded paper cup carriers" },
+    { id:"qsr-deli-wrap",     name:"Deli & sandwich wrap",     note:"Greaseproof paper, basket liners" },
+    { id:"qsr-pizza",         name:"Pizza & flat boxes",       note:"Corrugated pizza boxes" },
+    { id:"qsr-fry-cartons",   name:"Fry & snack cartons",      note:"Paperboard scoops and cartons" }
+  ],
+  "Coffee / Beverage": [
+    { id:"cof-hot-cups",   name:"Paper hot cups & sleeves",  note:"Single/double wall cups, ripple sleeves" },
+    { id:"cof-retail-bags",name:"Retail coffee bags",        note:"Kraft bags with degassing valve" },
+    { id:"cof-carry-trays",name:"Carry-out drink trays",     note:"Paper 2 and 4 cup trays" },
+    { id:"cof-gift",       name:"Gift & subscription boxes", note:"Sampler and subscription cartons" }
+  ],
+  "Foodservice Distributor": [
+    { id:"fsd-case-boxes",  name:"Case & shipper boxes",   note:"Corrugated shippers, RSC cases" },
+    { id:"fsd-butcher",     name:"Kraft butcher rolls",    note:"Butcher and freezer paper rolls" },
+    { id:"fsd-catering",    name:"Catering & delivery",    note:"Insulated catering boxes" },
+    { id:"fsd-bakery",      name:"Bakery & portion boxes", note:"Window bakery boxes, portion cups" }
+  ],
+  "Packaging Channel": [
+    { id:"pkg-shoppers",  name:"Custom printed shoppers", note:"Branded retail bags" },
+    { id:"pkg-rigid",     name:"Rigid gift boxes",        note:"Set-up rigid boxes, luxury" },
+    { id:"pkg-mailers",   name:"E-commerce mailers",      note:"Corrugated mailers, book wraps" },
+    { id:"pkg-cartons",   name:"Folding cartons",         note:"Printed folding carton runs" }
+  ],
+  "Industrial & Ag Sacks": [
+    { id:"ind-concrete",  name:"Concrete & cement sacks", note:"Multiwall paper sacks, 40-94 lb" },
+    { id:"ind-flour",     name:"Flour, sugar & grain",    note:"Food-grade multiwall bags" },
+    { id:"ind-petfood",   name:"Pet food & animal feed",  note:"Multiwall pet and feed bags" },
+    { id:"ind-charcoal",  name:"Charcoal & wood pellets", note:"Kraft charcoal and pellet bags" },
+    { id:"ind-seed",      name:"Seed & fertilizer",       note:"Ag seed and fertilizer sacks" },
+    { id:"ind-minerals",  name:"Minerals & chemicals",    note:"Valve bags for powders" }
+  ],
+  "Nicotine / Tobacco": [
+    { id:"nic-cartons",   name:"Paperboard cartons",   note:"Cig and vape carton sleeves" },
+    { id:"nic-rigid",     name:"Rigid boxes",          note:"Premium rigid packs" },
+    { id:"nic-pouch",     name:"Pouch & tin outers",   note:"Printed outer packaging" },
+    { id:"nic-shippers",  name:"Printed shipper cases",note:"Retail-ready shipper cases" }
+  ],
+  "Ammunition": [
+    { id:"ammo-cartons",  name:"Ammo cartons",         note:"Paperboard ammunition boxes" },
+    { id:"ammo-trays",    name:"Shell trays & inserts",note:"Molded paper trays" },
+    { id:"ammo-cases",    name:"Bulk shipper cases",   note:"Corrugated bulk cases" },
+    { id:"ammo-hang",     name:"Retail hang boxes",    note:"Peg/hang retail boxes" }
+  ],
+  "Enterprise / Logistics": [
+    { id:"ent-mailers",   name:"Branded mailers",      note:"Custom shipping mailers" },
+    { id:"ent-boxes",     name:"Custom shipping boxes",note:"Corrugated at scale" },
+    { id:"ent-voidfill",  name:"Paper void fill & wrap",note:"Kraft void fill, wrap rolls" },
+    { id:"ent-returns",   name:"Returns packaging",    note:"Resealable returns mailers" }
+  ],
+  "Prospecting / Other": [
+    { id:"oth-specialty", name:"Retail & specialty bags", note:"Boutique and specialty retail" },
+    { id:"oth-subbox",    name:"Subscription box brands", note:"DTC subscription packaging" },
+    { id:"oth-farmers",   name:"Farmers market & CSA",    note:"Produce and CSA paper bags" }
+  ]
+};
