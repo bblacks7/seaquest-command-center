@@ -28,6 +28,13 @@ a{color:inherit}
 header{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px);
   background:linear-gradient(180deg,rgba(10,14,20,.95),rgba(10,14,20,.78));border-bottom:1px solid var(--line)}
 .hbar{max-width:1080px;margin:0 auto;padding:9px 16px 4px;display:flex;align-items:center;gap:10px}
+.menubtn{background:var(--panel);border:1px solid var(--line);color:var(--tx);width:34px;height:34px;border-radius:10px;font-size:17px;cursor:pointer;flex:0 0 auto;display:grid;place-items:center;line-height:1}
+.menubtn:active{transform:scale(.95)}
+.menu-item{display:flex;align-items:center;gap:12px;padding:11px 10px;border-radius:11px;cursor:pointer;font-weight:700;font-size:14px}
+.menu-item:hover{background:var(--panel2)}
+.menu-item span{flex:1}
+.menu-grp{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:1.5px;font-weight:800;margin:14px 2px 4px}
+.row-link{display:flex;align-items:center;gap:10px;padding:11px 0;text-decoration:none;color:var(--tx);cursor:pointer}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.3px}
 .logo .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));
   display:grid;place-items:center;color:#04121a;font-weight:900;box-shadow:0 0 18px rgba(0,224,164,.35)}
@@ -235,6 +242,7 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 <body>
 <header>
   <div class="hbar">
+    <button id="menuBtn" class="menubtn" aria-label="Menu">&#9776;</button>
     <div class="logo"><div class="mark">S</div><div><b>SeaQuest</b><span>Command Center</span></div></div>
     <div class="cloud" id="cloudChip">local mode</div>
   </div>
@@ -277,6 +285,7 @@ const IND_BY_KEY={}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
 const TREE=window.SEAQUEST_TREE||{};
 const NICHE_BY_ID={}; Object.keys(TREE).forEach(ind=>TREE[ind].forEach(n=>NICHE_BY_ID[n.id]={name:n.name,note:n.note,industry:ind}));
 const ACADEMY=window.SEAQUEST_ACADEMY||[];
+const LINKS=window.SEAQUEST_LINKS||[];
 const FIN=window.SEAQUEST_FINANCE||{markup:0.22,overhead:8000,default:15000,avgDeal:{}};
 function dealValueOf(c){return (c.dealValue&&c.dealValue>0)?c.dealValue:((FIN.avgDeal&&FIN.avgDeal[c.industry])||FIN.default||15000);}
 function pnl(){const won=S.companies.filter(c=>!c.rejected&&c.stage==='won');const revenue=won.reduce((a,c)=>a+dealValueOf(c),0);const gross=Math.round(revenue*(FIN.markup||0.22));const net=gross-(FIN.overhead||0);return{won:won.length,revenue,gross,overhead:FIN.overhead||0,net};}
@@ -541,7 +550,39 @@ function render(){ renderConsole(); renderNav();
   else if(v==='quickplay')viewQuickPlay();
   else if(v==='research')viewResearch();
   else if(v==='academy')viewAcademy();
+  else if(v==='links')viewLinks();
   else if(v==='rep')viewRep();
+}
+function openMenu(){
+  const me=REP_BY_ID[S.me]||REPS[0];
+  const grp=(title,items)=>`<div class="menu-grp">${title}</div>`+items.map(it=>`<div class="menu-item" onclick="${it.onclick}">${it.icon} <span>${it.label}</span></div>`).join('');
+  const m=$('#modal');
+  m.innerHTML=`<h3>Menu</h3>
+   ${grp('Work',[{icon:'\u{1F3E0}',label:'HQ',onclick:"menuGo('command')"},{icon:'⚡',label:'Quick Play',onclick:"menuGo('quickplay')"},{icon:'\u{1F3AF}',label:'Hit List',onclick:"menuGo('hitlist')"}])}
+   ${grp('Grow',[{icon:'✨',label:'Research',onclick:"menuGo('research')"},{icon:'\u{1F393}',label:'Academy',onclick:"menuGo('academy')"}])}
+   ${grp('Map & Data',[{icon:'\u{1F5FA}️',label:'War Map',onclick:"menuGo('map')"},{icon:'\u{1F4CB}',label:'Pipeline',onclick:"menuGo('pipeline')"},{icon:'\u{1F4CA}',label:'Sectors',onclick:"menuGo('sectors')"}])}
+   ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}])}
+   ${grp('Resources',[{icon:'\u{1F517}',label:'Links & tools',onclick:"menuGo('links')"}])}
+   ${grp('Setup & Help',[{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'☁️',label:'Cloud sync',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
+   <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+function menuGo(v){closeModal();go(v);}
+function viewLinks(){
+  let h=`<div class="crumb" onclick="openMenu()">&#9776; Menu</div><h2 class="sec" style="margin-top:8px"><span class="dot"></span>Links &amp; Tools</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Quick links your reps need. Edit these in config.js (SEAQUEST_LINKS).</div>`;
+  LINKS.forEach(gr=>{
+    h+=`<h2 class="sec"><span class="dot"></span>${esc(gr.group)}</h2><div class="panel" style="padding:4px 12px">`;
+    (gr.items||[]).forEach((it,i)=>{
+      const bd=i<gr.items.length-1?'border-bottom:1px solid var(--line)':'';
+      const inner=`<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:13px">${esc(it.label)}</div>${it.note?`<div style="font-size:10px;color:var(--dim2)">${esc(it.note)}</div>`:''}</div>`;
+      if(it.view)h+=`<div class="row-link" style="${bd}" onclick="menuGo('${it.view}')">${inner}<span style="color:var(--teal)">&rarr;</span></div>`;
+      else if(it.url)h+=`<a class="row-link" style="${bd}" href="${esc(it.url)}" target="_blank" rel="noopener">${inner}<span style="color:var(--teal)">&#8599;</span></a>`;
+      else h+=`<div class="row-link" style="opacity:.55;${bd}">${inner}<span style="font-size:10px;color:var(--dim2)">soon</span></div>`;
+    });
+    h+=`</div>`;
+  });
+  $('#app').innerHTML=h;
 }
 function viewAcademy(){
   const me=REP_BY_ID[S.me]||REPS[0];
@@ -1493,6 +1534,7 @@ function renderTour(){
 
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
+$('#menuBtn').onclick=openMenu;
 $('#cloudChip').onclick=openCloud;
 $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
 (async function boot(){

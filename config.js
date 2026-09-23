@@ -264,3 +264,21 @@ window.SEAQUEST_ACADEMY = [
       { q:"Where do prices come from?", a:["The rep","Brandon / quotes","The prospect"], correct:1 }
     ] }
 ];
+
+// ---- Links & Tools page (edit freely; url opens externally, view jumps in-app, blank = add later) ----
+window.SEAQUEST_LINKS = [
+  { group:"Get set up", items:[
+    { label:"Get the Claude app", url:"https://claude.ai/download", note:"Free - used for research" },
+    { label:"Claude on the web", url:"https://claude.ai", note:"Or just use the browser" }
+  ]},
+  { group:"SeaQuest", items:[
+    { label:"SeaQuest website", url:"https://seaquest-global.com", note:"Our public site" },
+    { label:"Request a quote", url:"", note:"Add your quotes email in config.js" },
+    { label:"Capability statement", url:"", note:"Add the PDF link in config.js" }
+  ]},
+  { group:"In the app", items:[
+    { label:"Academy - training", view:"academy", note:"Earn badges and XP" },
+    { label:"Research companies", view:"research", note:"Find and import leads" },
+    { label:"War Map", view:"map", note:"Territories and business hours" }
+  ]}
+];
