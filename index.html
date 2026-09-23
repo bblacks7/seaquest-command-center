@@ -213,6 +213,17 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 .pitch-zone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(34,197,139,.22),rgba(0,224,164,.33),rgba(34,197,139,.22))}
 .pitch-bull{position:absolute;top:0;bottom:0;background:rgba(255,210,63,.55)}
 .pitch-marker{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;box-shadow:0 0 10px #fff;border-radius:2px}
+/* tutorial tour */
+#tour{position:fixed;left:0;right:0;bottom:0;z-index:96;display:none;justify-content:center;padding:14px;padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+#tour.show{display:flex}
+#tour .tcard{background:var(--panel);border:1px solid var(--teal);border-radius:16px;max-width:560px;width:100%;padding:16px;box-shadow:0 -12px 44px rgba(0,0,0,.55)}
+#tour .tstep{font-size:10px;color:var(--teal);font-weight:800;letter-spacing:1.5px;text-transform:uppercase}
+#tour h4{margin:6px 0;font-size:17px}
+#tour p{margin:0;font-size:13px;color:var(--dim);line-height:1.55}
+#tour .trow{display:flex;gap:8px;margin-top:14px;align-items:center}
+#tour .tdots{flex:1;display:flex;gap:5px}
+#tour .tdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
+#tour .tdots i.on{background:var(--teal);box-shadow:0 0 6px var(--teal)}
 @media(max-width:640px){
   .g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}
   .maprow{gap:3px}.tile .ab{font-size:9px}
@@ -242,6 +253,7 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 
 <button class="fab" id="fab" title="Add company">+</button>
 <div id="toast"></div>
+<div id="tour"></div>
 <div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -277,7 +289,7 @@ const RANKS=[
 
 let sb=null;
 const S={view:'command',companies:[],cloud:false,session:null,me:REPS[0].id,
-  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, qp:{industry:null,scope:'me',idx:0}, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
+  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, tour:{on:false,i:0}, qp:{industry:null,scope:'me',idx:0}, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -1045,6 +1057,7 @@ function openMe(){
         <button class="mini-btn" onclick="event.stopPropagation();renameRep('${rep.id}')">Rename</button></div>`;}).join('')
     +`<div style="font-size:11px;color:var(--dim2);margin-top:12px">Tip: turn on Cloud Sync so each rep logs in on their own phone and their XP is tracked live across the team.</div>
       <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" onclick="closeModal()">Close</button>
+      <button class="btn adv sm" onclick="closeModal();startTour()">▶ Tutorial</button>
       <button class="btn sm" onclick="openHelp()">? How to play</button>
       <button class="btn sm" onclick="exportData()">\u{1F4BE} Backup</button><button class="btn sm" onclick="importData()">\u{1F4E5} Restore</button></div>`;
   $('#modalBg').classList.add('show');
@@ -1104,6 +1117,7 @@ function openResearch(prefill){
   <div class="field"><label>Location (optional)</label><input id="r_loc" value="${esc(prefill.location||'')}" placeholder="e.g. Texas, or Southeast US"></div>
   <div class="field"><label>How many</label><select id="r_n"><option>15</option><option>10</option><option>20</option><option>25</option></select></div>
   <div class="uacts2" style="margin-top:12px"><button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="launchResearch()">✨ Copy prompt &amp; open Claude</button></div>
+  <div style="font-size:11px;color:var(--dim2);margin-top:8px">Uses the free Claude app / claude.ai. No API or setup — just paste the prompt, then copy Claude's list back here and Import.</div>
   <div class="field" style="margin-top:18px"><label>Step 2: paste Claude's results</label><textarea id="r_paste" rows="6" placeholder="Paste the list Claude gives you here..."></textarea></div>
   <div style="font-size:11px;color:var(--dim2);margin-top:6px">Format per line: Company | Sector | City, ST | Contact | Title | Email | Phone | Note</div>
   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Close</button><button class="btn adv" onclick="importResearch()">Import to CRM</button></div>`;
@@ -1409,6 +1423,41 @@ function openHelp(){
   $('#modalBg').classList.add('show');
 }
 
+/* ---------- tutorial tour ---------- */
+const TOUR=[
+  {view:'command', title:'Welcome to SeaQuest', body:"This is your command center for landing paper-packaging accounts. You cover territory by contacting companies, and you level up as you go. Take 60 seconds and I'll show you around."},
+  {view:'command', title:'Two things you need', body:"1) Add this app to your home screen so it opens like an app. 2) Get the free Claude app (or use claude.ai) - you'll use it to research new companies. That's it: no coding, no API keys."},
+  {view:'command', title:'This is your HQ', body:"Up top is you: your level, XP and rank. Below are your Daily Ops quests, your team, and recent activity. Tap the menu chip at the very top to pick which rep you are - do that first."},
+  {view:'quickplay', title:'Quick Play - your dialer', body:"Pick a sector and it feeds you one account at a time with the number ready to go. Hit the big Call button, then Next. It even skips places that are closed for the day."},
+  {view:'research', title:'Research with Claude', body:"Tap Research, choose a sector or niche, and it copies a prompt and opens Claude. Paste it in, Claude gives you a list of companies, you copy that list, come back here and paste it, then Import. All copy and paste - just the regular free Claude app."},
+  {view:'research', title:'Grow into new niches', body:"The tree shows real paper-packaging niches under each sector - concrete sacks, coffee cups, pet food bags and more. Locked ones are wide open opportunities. Research or add accounts to light them up."},
+  {view:'academy', title:'Academy - learn the playbook', body:"How we talk, how to reach the buyer, do's and don'ts. Each module has a quick check; pass it to earn a badge and XP. If you're new, start here before you dial."},
+  {view:'hitlist', title:'Hit List - who to work now', body:"Your prioritized list for today: follow-ups and open accounts first. Call or email right from the card."},
+  {view:'map', title:'War Map - work the clock', body:"Every state is a territory. Tap one to see the sectors inside. States turn red when it's after hours there, so you always know who you can call right now."},
+  {view:'pipeline', title:'Working an account', body:"Every account has Call, Email and Edit, plus stage buttons from Scouted to Won. Advancing earns you XP. Email a place after hours and it schedules the send for the morning their time."},
+  {view:'command', title:"You're ready", body:"That's the tour. Pick your name from the top menu, run the Academy, then hit Quick Play and start dialing. Replay this anytime from the menu."}
+];
+function startTour(){S.tour={on:true,i:0};renderTour();}
+function tourNext(){if(!S.tour)S.tour={on:true,i:0};if(S.tour.i<TOUR.length-1){S.tour.i++;renderTour();}else{endTour(true);}}
+function tourPrev(){if(S.tour&&S.tour.i>0){S.tour.i--;renderTour();}}
+function endTour(complete){S.tour={on:false,i:0};$('#tour').classList.remove('show');try{localStorage.setItem('sq_tour','1');}catch(e){}render();if(complete)toast('Tutorial complete — go get some accounts \u{1F4AA}');}
+function renderTour(){
+  const step=TOUR[S.tour.i];
+  if(step.view){S.view=step.view;S.terr=null;}
+  render();
+  const t=$('#tour');
+  t.innerHTML=`<div class="tcard">
+    <div class="tstep">Step ${S.tour.i+1} of ${TOUR.length}</div>
+    <h4>${esc(step.title)}</h4>
+    <p>${esc(step.body)}</p>
+    <div class="trow"><div class="tdots">${TOUR.map((_,i)=>`<i class="${i===S.tour.i?'on':''}"></i>`).join('')}</div>
+      <button class="btn sm" onclick="endTour(false)">Skip</button>
+      ${S.tour.i>0?`<button class="btn sm" onclick="tourPrev()">Back</button>`:''}
+      <button class="btn adv sm" onclick="tourNext()">${S.tour.i<TOUR.length-1?'Next':'Finish'}</button></div>
+  </div>`;
+  t.classList.add('show');window.scrollTo(0,0);
+}
+
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
 $('#cloudChip').onclick=openCloud;
@@ -1418,7 +1467,7 @@ $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
   await initCloud();
   await reload();
   render();
-  try{if(!localStorage.getItem('sq_seen')){localStorage.setItem('sq_seen','1');setTimeout(openHelp,700);}}catch(e){}
+  try{if(!localStorage.getItem('sq_tour')){setTimeout(startTour,600);}}catch(e){}
   if('serviceWorker' in navigator){try{navigator.serviceWorker.register('sw.js');}catch(e){}}
   setInterval(()=>{
     let list=loadSched(),changed=false;
