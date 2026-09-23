@@ -2,8 +2,8 @@
 // Paste your project values here (from Supabase → Project Settings → API).
 // The anon key is safe to expose in a frontend app; NEVER put the service_role key here.
 window.SEAQUEST_CONFIG = {
-  url: "PASTE_YOUR_SUPABASE_PROJECT_URL_HERE",       // e.g. https://abcdxyz.supabase.co
-  anonKey: "PASTE_YOUR_SUPABASE_ANON_PUBLIC_KEY_HERE" // the "anon" / "public" key
+  url: "https://cznfungtwxmtzykemgls.supabase.co",
+  anonKey: "sb_publishable_777hUvvUTV-0GistG6c0LQ_UduEW6mt" // publishable (anon) key — safe in a frontend
 };
 
 // Total Addressable Market denominators (sourced) for the Global Domination game.
