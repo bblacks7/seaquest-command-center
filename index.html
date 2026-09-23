@@ -646,8 +646,39 @@ async function submitAdd(){
   closeModal();await addCompany(o);toast('✅ '+name+' deployed');render();
 }
 
+/* ---------- cloud login ---------- */
+function openCloud(){
+  const m=$('#modal');
+  if(S.cloud){
+    m.innerHTML=`<h3>Cloud Sync</h3><div style="font-size:12px;color:var(--dim)">Signed in as <b style="color:var(--teal)">${esc(S.session&&S.session.user?S.session.user.email:'')}</b>. Your moves sync live to every device and rep.</div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button><button class="btn rej" onclick="signOut()">Sign out</button></div>`;
+  }else{
+    m.innerHTML=`<h3>Connect to Cloud</h3><div style="font-size:12px;color:var(--dim)">Sign in to sync this board live across your phone, laptop, and reps. Without it the game runs locally on this device.</div>
+    <div class="field"><label>Email</label><input id="c_email" type="email" placeholder="you@seaquest.app" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="c_pw" type="password" placeholder="password" autocomplete="current-password"></div>
+    <div id="c_err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="signIn()">Sign in &amp; sync</button></div>
+    <div style="font-size:11px;color:var(--dim2);margin-top:12px">No login yet? Create one in Supabase &rarr; Authentication &rarr; Users &rarr; Add user (check Auto Confirm), then sign in here.</div>`;
+  }
+  $('#modalBg').classList.add('show');
+}
+async function signIn(){
+  if(!sb){toast('Cloud unavailable');return;}
+  const email=$('#c_email').value.trim(),pw=$('#c_pw').value;
+  const err=$('#c_err');err.style.display='none';
+  try{
+    const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
+    if(error){err.textContent=error.message;err.style.display='block';return;}
+    S.cloud=true;S.session=data.session;
+    closeModal();await reload();render();toast('☁️ Cloud synced');
+  }catch(e){err.textContent='Sign-in failed';err.style.display='block';}
+}
+async function signOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;S.session=null;closeModal();await reload();render();toast('Signed out - local mode');}
+
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
+$('#cloudChip').onclick=openCloud;
+$('#cloudChip').style.cursor='pointer';
 $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
 (async function boot(){
   await initCloud();
