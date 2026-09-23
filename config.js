@@ -39,6 +39,15 @@ window.SEAQUEST_FRONTIER = [
   { key: "Rest of World",  pool: 3000, flag: "\u{1F30D}", note: "MENA, Africa, APAC, LatAm" }
 ];
 
+// ---- Your squad: you + reps. Each levels up from the accounts they own. ----
+// Rename freely (or tap a name in the app to rename). id must stay unique & stable.
+window.SEAQUEST_REPS = [
+  { id:"brandon", name:"Brandon", role:"Commander",  market:"US / National",      emoji:"⭐", color:"#ffd23f" },
+  { id:"xiaoke",  name:"Xiaoke",  role:"Field Rep",  market:"APAC / Sourcing",    emoji:"\u{1F409}", color:"#ff7a45" },
+  { id:"mx",      name:"Mexico Rep", role:"Field Rep", market:"Mexico / LatAm",   emoji:"\u{1F32E}", color:"#22c58b" },
+  { id:"eu",      name:"EU Rep",   role:"Field Rep", market:"EU / UK",            emoji:"\u{1F1EA}\u{1F1FA}", color:"#2f80ed" }
+];
+
 // ---- US states: population (M, for target weighting) + tile-map [row,col] ----
 window.SEAQUEST_STATES = [
   { ab:"AL", name:"Alabama",        pop:5.07, rc:[6,6] },

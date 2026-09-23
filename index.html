@@ -19,30 +19,46 @@ html,body{margin:0;padding:0;background:var(--bg);color:var(--tx);
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased;overscroll-behavior-y:none}
 body{background:
-  radial-gradient(1200px 600px at 80% -10%, rgba(0,224,164,.06), transparent),
-  radial-gradient(900px 500px at -10% 10%, rgba(47,128,237,.07), transparent),
+  radial-gradient(1200px 600px at 80% -10%, rgba(0,224,164,.07), transparent),
+  radial-gradient(900px 500px at -10% 10%, rgba(47,128,237,.08), transparent),
   var(--bg);min-height:100vh}
 a{color:inherit}
 .wrap{max-width:1080px;margin:0 auto;padding:0 16px 96px}
 /* Header */
-header{position:sticky;top:0;z-index:40;backdrop-filter:blur(10px);
-  background:linear-gradient(180deg,rgba(10,14,20,.92),rgba(10,14,20,.72));border-bottom:1px solid var(--line)}
-.hbar{max-width:1080px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:12px}
+header{position:sticky;top:0;z-index:40;backdrop-filter:blur(12px);
+  background:linear-gradient(180deg,rgba(10,14,20,.95),rgba(10,14,20,.78));border-bottom:1px solid var(--line)}
+.hbar{max-width:1080px;margin:0 auto;padding:9px 16px 4px;display:flex;align-items:center;gap:10px}
 .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.3px}
 .logo .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--teal),var(--blue));
   display:grid;place-items:center;color:#04121a;font-weight:900;box-shadow:0 0 18px rgba(0,224,164,.35)}
-.logo b{font-size:15px}.logo span{font-size:10px;color:var(--dim);display:block;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
-.rankchip{margin-left:auto;text-align:right}
-.rankchip .rk{font-size:12px;font-weight:800;color:var(--gold)}
-.rankchip .sc{font-size:10px;color:var(--dim)}
-.cloud{font-size:9px;padding:3px 7px;border-radius:20px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
+.logo b{font-size:15px}.logo span{font-size:9px;color:var(--dim);display:block;font-weight:600;letter-spacing:1.5px;text-transform:uppercase}
+.cloud{margin-left:auto;font-size:9px;padding:4px 9px;border-radius:20px;border:1px solid var(--line);color:var(--dim);white-space:nowrap;cursor:pointer}
 .cloud.on{color:var(--teal);border-color:rgba(0,224,164,.4)}
+/* Console (top game HUD) */
+.console{max-width:1080px;margin:0 auto;padding:2px 16px 9px}
+.me-row{display:flex;align-items:center;gap:11px;background:linear-gradient(135deg,rgba(255,255,255,.04),rgba(255,255,255,.01));
+  border:1px solid var(--line);border-radius:14px;padding:9px 11px;cursor:pointer;transition:.15s}
+.me-row:active{transform:scale(.995)}
+.ava{width:44px;height:44px;border-radius:13px;display:grid;place-items:center;font-size:21px;position:relative;flex:0 0 auto;border:2px solid;background:#0e1723}
+.ava .lvl{position:absolute;right:-7px;bottom:-7px;background:var(--bg);border:1px solid var(--line);border-radius:8px;font-size:9px;font-weight:900;padding:1px 5px;color:var(--tx);line-height:1.3}
+.me-info{flex:1;min-width:0}
+.me-info .nm{font-weight:800;font-size:14px;display:flex;align-items:center;gap:7px}
+.me-info .rl{font-size:10px;color:var(--dim);margin-top:1px}
+.xpwrap{margin-top:6px}
+.xpbar{height:6px;border-radius:5px;background:#0c1420;border:1px solid var(--line);overflow:hidden}
+.xpbar>i{display:block;height:100%;transition:width .8s cubic-bezier(.2,.8,.2,1)}
+.xp-lab{display:flex;justify-content:space-between;font-size:9px;color:var(--dim2);margin-top:3px;font-variant-numeric:tabular-nums}
+.swap{font-size:16px;color:var(--dim);flex:0 0 auto;padding:0 2px}
 /* Global meter */
-.gmeter{max-width:1080px;margin:0 auto;padding:0 16px 10px}
-.gmeter .track{height:8px;border-radius:6px;background:#0c1420;border:1px solid var(--line);overflow:hidden;position:relative}
-.gmeter .fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px rgba(0,224,164,.5)}
+.gmeter{padding-top:10px}
+.gmeter .track{height:9px;border-radius:6px;overflow:hidden;position:relative;border:1px solid var(--line);
+  background:repeating-linear-gradient(90deg,transparent,transparent calc(10% - 1px),rgba(255,255,255,.07) 10%),#0c1420}
+.gmeter .fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--teal));width:0;transition:width 1.1s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 14px rgba(0,224,164,.55)}
 .gmeter .lab{display:flex;justify-content:space-between;font-size:10px;color:var(--dim);margin:6px 2px 0}
 .gmeter .lab b{color:var(--teal)}
+.chips{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.chip{font-size:10px;padding:4px 9px;border-radius:20px;background:#0e1723;border:1px solid var(--line);color:var(--dim);font-weight:700;display:flex;gap:5px;align-items:center}
+.chip b{color:var(--tx)}
 /* Nav */
 nav{display:flex;gap:6px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
 nav::-webkit-scrollbar{display:none}
@@ -50,11 +66,15 @@ nav button{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);co
   padding:9px 14px;border-radius:11px;font-size:13px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
 nav button.on{color:#04121a;background:linear-gradient(135deg,var(--teal),#3fe0c0);border-color:transparent;box-shadow:0 4px 16px rgba(0,224,164,.25)}
 nav button:active{transform:scale(.97)}
+.subtabs{display:flex;gap:6px;overflow-x:auto;padding:2px 0 12px;scrollbar-width:none}
+.subtabs::-webkit-scrollbar{display:none}
+.subtabs button{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--dim);padding:7px 12px;border-radius:9px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.15s}
+.subtabs button.on{color:#04121a;background:var(--teal);border-color:transparent}
+.subtabs button:active{transform:scale(.96)}
 /* Cards & panels */
 .grid{display:grid;gap:12px}
 .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr 1fr 1fr}.g4{grid-template-columns:repeat(4,1fr)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px}
-.panel.tight{padding:12px}
 h2.sec{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:var(--dim);margin:22px 4px 10px;font-weight:800;display:flex;align-items:center;gap:8px}
 h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-shadow:0 0 8px var(--teal)}
 /* Stat tiles */
@@ -67,13 +87,23 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 .bar > i{display:block;height:100%;border-radius:5px;transition:width .8s cubic-bezier(.2,.8,.2,1)}
 .barlab{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;color:var(--dim)}
 .barlab b{color:var(--tx)}
-/* region rows */
+/* rows */
 .rrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
 .rrow:last-child{border:none}
 .rrow .flag{font-size:18px;width:24px;text-align:center}
 .rrow .nm{font-weight:700;font-size:13px;min-width:118px}
 .rrow .bwrap{flex:1}
 .rrow .pc{font-size:11px;color:var(--dim);width:74px;text-align:right;font-variant-numeric:tabular-nums}
+/* Squad */
+.rep{display:flex;align-items:center;gap:11px;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:11px}
+.rep.me{border-color:rgba(0,224,164,.55);box-shadow:0 0 0 1px rgba(0,224,164,.12)}
+.rep .info{flex:1;min-width:0}
+.rep .rn{font-weight:800;font-size:14px;display:flex;align-items:center;gap:6px}
+.rep .rm{font-size:10px;color:var(--dim)}
+.rep .youtag{font-size:8px;background:var(--teal);color:#04121a;padding:1px 6px;border-radius:10px;font-weight:900;letter-spacing:.5px}
+.rep .rbtns{display:flex;gap:6px;margin-top:8px}
+.mini-btn{font-size:10px;padding:5px 9px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);cursor:pointer;font-weight:700}
+.mini-btn.on{color:#04121a;background:var(--teal);border-color:transparent}
 /* US map */
 .maprow{display:grid;grid-template-columns:repeat(11,1fr);gap:5px}
 .tile{position:relative;aspect-ratio:1/1;border-radius:8px;border:1px solid var(--line);background:#111a25;
@@ -97,10 +127,15 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 .unit{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;transition:.15s}
 .unit .u-top{display:flex;align-items:flex-start;gap:8px}
 .unit .u-nm{font-weight:800;font-size:14px;line-height:1.2}
-.unit .u-meta{font-size:11px;color:var(--dim);margin-top:2px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.unit .u-meta{font-size:11px;color:var(--dim);margin-top:4px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .pill{font-size:10px;padding:2px 7px;border-radius:20px;border:1px solid var(--line);color:var(--dim);white-space:nowrap}
 .pill.ind{border-color:transparent;color:#04121a;font-weight:700}
 .terrpill{font-size:10px;padding:2px 7px;border-radius:6px;background:#0e1723;border:1px solid var(--line);color:var(--dim);font-weight:700}
+.owner{font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--line);cursor:pointer;white-space:nowrap;font-weight:700}
+.callbtn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:13px;color:var(--teal);text-decoration:none;font-weight:800;
+  border:1px solid rgba(0,224,164,.35);background:rgba(0,224,164,.09);padding:8px 12px;border-radius:10px}
+.callbtn:active{transform:scale(.97)}
+.nocall{margin-top:8px;font-size:11px;color:var(--dim);display:inline-flex;gap:6px;align-items:center}
 /* stage stepper */
 .steps{display:flex;gap:4px;margin-top:11px}
 .step{flex:1;height:26px;border-radius:7px;background:#0c1420;border:1px solid var(--line);display:grid;place-items:center;
@@ -139,6 +174,9 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 .field label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:1px;font-weight:700}
 .field input,.field select,.field textarea{width:100%;margin-top:5px;background:var(--bg2);border:1px solid var(--line);
   color:var(--tx);padding:11px;border-radius:10px;font-size:14px;font-family:inherit}
+.pick{display:flex;align-items:center;gap:11px;padding:11px;border:1px solid var(--line);border-radius:12px;margin-top:9px;cursor:pointer;transition:.15s}
+.pick:hover{border-color:var(--teal)}
+.pick.on{border-color:var(--teal);background:rgba(0,224,164,.06)}
 .crumb{font-size:12px;color:var(--dim);margin:14px 4px 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .crumb:hover{color:var(--teal)}
 .terrhead{display:flex;align-items:flex-start;gap:14px;flex-wrap:wrap}
@@ -160,11 +198,14 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
   <div class="hbar">
     <div class="logo"><div class="mark">S</div><div><b>SeaQuest</b><span>Command Center</span></div></div>
     <div class="cloud" id="cloudChip">local mode</div>
-    <div class="rankchip"><div class="rk" id="rankName">Recruit</div><div class="sc" id="rankScore">0 XP</div></div>
   </div>
-  <div class="gmeter">
-    <div class="track"><div class="fill" id="gfill"></div></div>
-    <div class="lab"><span>Global Domination</span><span><b id="gpct">0%</b> of <span id="gpool">0</span> targets</span></div>
+  <div class="console">
+    <div class="me-row" id="meRow" onclick="openMe()"></div>
+    <div class="gmeter">
+      <div class="track"><div class="fill" id="gfill"></div></div>
+      <div class="lab"><span>Global Domination</span><span><b id="gpct">0%</b> of <span id="gpool">0</span> targets</span></div>
+      <div class="chips" id="chips"></div>
+    </div>
   </div>
   <div class="wrap" style="padding-bottom:0"><nav id="nav"></nav></div>
 </header>
@@ -173,46 +214,44 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 
 <button class="fab" id="fab" title="Add company">+</button>
 <div id="toast"></div>
-
-<div class="modal-bg" id="modalBg">
-  <div class="modal" id="modal"></div>
-</div>
+<div class="modal-bg" id="modalBg"><div class="modal" id="modal"></div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="data.js"></script>
 <script>
 /* ============================ SeaQuest Command Center ============================ */
-const CFG = window.SEAQUEST_CONFIG || {};
-const INDUSTRIES = window.SEAQUEST_INDUSTRIES || [];
-const STAGES = window.SEAQUEST_STAGES || [];
-const REJ = window.SEAQUEST_REJECTED;
-const STATES = window.SEAQUEST_STATES || [];
-const FRONTIER = window.SEAQUEST_FRONTIER || [];
-const US_POOL = window.SEAQUEST_US_POOL || 4000;
-const SEED = window.SEAQUEST_SEED || [];
+const CFG=window.SEAQUEST_CONFIG||{};
+const INDUSTRIES=window.SEAQUEST_INDUSTRIES||[];
+const STAGES=window.SEAQUEST_STAGES||[];
+const REJ=window.SEAQUEST_REJECTED;
+const STATES=window.SEAQUEST_STATES||[];
+const FRONTIER=window.SEAQUEST_FRONTIER||[];
+const US_POOL=window.SEAQUEST_US_POOL||4000;
+const SEED=window.SEAQUEST_SEED||[];
+const REPS=window.SEAQUEST_REPS||[{id:"me",name:"Me",role:"Commander",market:"",emoji:"⭐",color:"#ffd23f"}];
 
-const STATE_BY_AB = {}; STATES.forEach(s=>STATE_BY_AB[s.ab]=s);
-const US_AB_SET = new Set(STATES.map(s=>s.ab));
-const IND_BY_KEY = {}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
-const STAGE_IDX = {}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
-const SUM_POP = STATES.reduce((a,s)=>a+s.pop,0);
-const GLOBAL_POOL = US_POOL + FRONTIER.reduce((a,f)=>a+f.pool,0);
+const STATE_BY_AB={}; STATES.forEach(s=>STATE_BY_AB[s.ab]=s);
+const US_AB_SET=new Set(STATES.map(s=>s.ab));
+const IND_BY_KEY={}; INDUSTRIES.forEach(i=>IND_BY_KEY[i.key]=i);
+const STAGE_IDX={}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
+const REP_BY_ID={}; REPS.forEach(r=>REP_BY_ID[r.id]={...r});
+const SUM_POP=STATES.reduce((a,s)=>a+s.pop,0);
+const GLOBAL_POOL=US_POOL+FRONTIER.reduce((a,f)=>a+f.pool,0);
 
-const RANKS = [
+const RANKS=[
   {n:"Recruit",x:0},{n:"Scout",x:120},{n:"Field Operator",x:400},{n:"Closer",x:1000},
   {n:"Regional Boss",x:2200},{n:"Continental Command",x:4500},{n:"Global Overlord",x:9000}
 ];
 
 let sb=null;
-const S={view:'command',companies:[],cloud:false,session:null,
-  terr:null, // {kind:'state'|'country', key}
-  filter:{terr:null,industry:null,stage:null,q:''}};
+const S={view:'command',companies:[],cloud:false,session:null,me:REPS[0].id,
+  terr:null, terrTab:'all', terrSector:null, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
 const esc=x=>(x==null?'':String(x)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2200);}
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
 function fmtPct(p){ if(p>=10)return p.toFixed(0)+'%'; if(p>=1)return p.toFixed(1)+'%'; if(p>=0.01)return p.toFixed(2)+'%'; if(p>0)return p.toFixed(4)+'%'; return '0%'; }
 
 function deriveStage(status){
@@ -224,8 +263,10 @@ function deriveStage(status){
   if(/research|need contact|prospect|to research/.test(s)) return 'prospect';
   return 'researched';
 }
-function isRejected(status,ov){ if(ov&&typeof ov.rejected==='boolean')return ov.rejected; return /reject|declin|lost|not interested|no interest/.test((status||'').toLowerCase()); }
+function isRejected(status){ return /reject|declin|lost|not interested|no interest/.test((status||'').toLowerCase()); }
 function statusForStage(k){return ({prospect:'Prospect',researched:'Researched',reached:'Reached out',convo:'In conversation',won:'Won'})[k]||'Researched';}
+function telHref(phone){ if(!phone)return null; const m=String(phone).match(/\+?\d[\d\s().\-]{6,}\d/); if(!m)return null; let num=m[0].replace(/[^\d+]/g,''); if(num.replace(/\D/g,'').length<7)return null; return 'tel:'+num; }
+function prettyTel(tel){let n=tel.replace('tel:','');const d=n.replace(/\D/g,'');if(d.length===10)return '('+d.slice(0,3)+') '+d.slice(3,6)+'-'+d.slice(6);if(d.length===11&&d[0]==='1')return '1 ('+d.slice(1,4)+') '+d.slice(4,7)+'-'+d.slice(7);return n;}
 
 /* ---------- geo parsing ---------- */
 function parseGeo(loc){
@@ -249,31 +290,39 @@ function parseGeo(loc){
   if(byName) return {terr:byName.ab,region:'United States',kind:'state'};
   return {terr:'Unassigned',region:'HQ / National',kind:'na'};
 }
+function defaultOwner(region){
+  if(region==='Mexico')return 'mx';
+  if(region==='European Union'||region==='United Kingdom')return 'eu';
+  if(region==='Rest of World')return 'xiaoke';
+  return REPS[0].id;
+}
 
 /* ---------- targets ---------- */
 function stateTarget(ab){const st=STATE_BY_AB[ab];if(!st)return 0;return Math.max(8,Math.round(US_POOL*st.pop/SUM_POP));}
 function territoryTarget(kind,key){
   if(kind==='state')return stateTarget(key);
   const f=FRONTIER.find(f=>f.key===key);if(f)return f.pool;
-  if(key==='Unassigned')return 200;
-  return 100;
+  if(key==='Unassigned')return 200; return 100;
 }
-function indWeight(k){const i=IND_BY_KEY[k];return i?i.weight:0.05;}
 
-/* ---------- persistence (local mode) ---------- */
+/* ---------- persistence ---------- */
 const LS='sq_ov_v2';
-function loadOv(){try{return JSON.parse(localStorage.getItem(LS))||{byName:{},added:[]}}catch(e){return{byName:{},added:[]}}}
+function loadOv(){try{return JSON.parse(localStorage.getItem(LS))||{byName:{},added:[],owners:{}}}catch(e){return{byName:{},added:[],owners:{}}}}
 function saveOv(o){try{localStorage.setItem(LS,JSON.stringify(o))}catch(e){}}
+function getMe(){try{return localStorage.getItem('sq_me')||REPS[0].id}catch(e){return REPS[0].id}}
+function loadRepNames(){try{const n=JSON.parse(localStorage.getItem('sq_repnames')||'{}');Object.keys(n).forEach(id=>{if(REP_BY_ID[id])REP_BY_ID[id].name=n[id];});}catch(e){}}
+function saveRepName(id,name){try{const n=JSON.parse(localStorage.getItem('sq_repnames')||'{}');n[id]=name;localStorage.setItem('sq_repnames',JSON.stringify(n));}catch(e){}}
 
-/* ---------- build model ---------- */
+/* ---------- model ---------- */
 function buildModel(list){
+  const ov=loadOv();const owners=ov.owners||{};
   return list.map(raw=>{
     const geo=parseGeo(raw.location);
     const rej=(typeof raw._rejected==='boolean')?raw._rejected:isRejected(raw.status);
-    const stage=deriveStage(raw.status);
+    const owner=owners[raw.name]||raw.owner||defaultOwner(geo.region);
     return {id:raw.id,name:raw.name,industry:raw.industry||'Prospecting / Other',
       location:raw.location,status:raw.status,phone:raw.phone,notes:raw.notes,
-      geo,rejected:rej,stage};
+      geo,rejected:rej,stage:deriveStage(raw.status),owner};
   });
 }
 function localList(){
@@ -284,19 +333,17 @@ function localList(){
   return list;
 }
 
-/* ---------- data load / write ---------- */
+/* ---------- cloud ---------- */
 async function initCloud(){
   if(!window.supabase||!CFG.url||!/^http/.test(CFG.url))return;
-  try{
-    sb=window.supabase.createClient(CFG.url,CFG.anonKey);
+  try{ sb=window.supabase.createClient(CFG.url,CFG.anonKey);
     const {data}=await sb.auth.getSession();
     if(data&&data.session){S.cloud=true;S.session=data.session;}
   }catch(e){sb=null;}
 }
 async function reload(){
   if(S.cloud&&sb){
-    try{
-      const {data,error}=await sb.from('companies').select('*').order('name');
+    try{const {data,error}=await sb.from('companies').select('*').order('name');
       if(!error&&data){S.companies=buildModel(data.map(r=>({id:r.id,name:r.name,industry:r.industry,location:r.location,status:r.status,phone:r.phone_channel,notes:r.notes})));return;}
     }catch(e){}
   }
@@ -309,25 +356,30 @@ async function writeStage(c,stageKey,rejected){
   c.status=status;c.rejected=!!rejected;c.stage=rejected?c.stage:stageKey;
 }
 async function addCompany(o){
+  o.owner=o.owner||S.me;
   if(S.cloud&&sb){try{await sb.from('companies').insert({name:o.name,industry:o.industry,location:o.location,status:o.status,notes:o.notes,phone_channel:o.phone});}catch(e){}}
   else{const ov=loadOv();ov.added=ov.added||[];ov.added.push(o);saveOv(ov);}
+  const ov=loadOv();ov.owners=ov.owners||{};ov.owners[o.name]=o.owner;saveOv(ov);
   await reload();
 }
+function setOwner(idx,id){
+  const c=S.companies[idx];if(!c)return;
+  const ov=loadOv();ov.owners=ov.owners||{};ov.owners[c.name]=id;saveOv(ov);
+  c.owner=id;closeModal();render();toast(esc(c.name)+' → '+REP_BY_ID[id].name);
+}
 
-/* ---------- metrics ---------- */
+/* ---------- metrics & XP ---------- */
 function metricsFor(companies){
   let m={known:companies.length,prospect:0,researched:0,reached:0,convo:0,won:0,rejected:0,contacted:0};
-  companies.forEach(c=>{
-    if(c.rejected){m.rejected++;return;}
-    m[c.stage]=(m[c.stage]||0)+1;
-    if(STAGE_IDX[c.stage]>=STAGE_IDX.reached)m.contacted++;
-  });
+  companies.forEach(c=>{ if(c.rejected){m.rejected++;return;} m[c.stage]=(m[c.stage]||0)+1; if(STAGE_IDX[c.stage]>=STAGE_IDX.reached)m.contacted++; });
   return m;
 }
 function score(m){return m.researched*5+m.reached*20+m.convo*45+m.won*150+m.rejected*4;}
 function rankFor(x){let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(x>=RANKS[i].x){r=RANKS[i];nx=RANKS[i+1]||null;}}return{r,nx};}
+function repXP(id){return score(metricsFor(S.companies.filter(c=>c.owner===id)));}
+function levelInfo(xp){let lvl=1,need=200,rem=xp;while(rem>=need){rem-=need;lvl++;need=Math.round(need*1.35);}return{level:lvl,into:rem,need,pct:need?rem/need:0};}
 
-/* ---------- color for territory ---------- */
+/* ---------- colors ---------- */
 function terrColor(m,target){
   if(m.known===0)return{bg:'#111a25',bd:'#233043',fg:'#3f4f60',fill:'#233043'};
   const ctrl=target?Math.min(1,m.contacted/target):0;
@@ -336,15 +388,18 @@ function terrColor(m,target){
   if(m.rejected>0)return{bg:'rgba(255,77,79,.13)',bd:'rgba(255,77,79,.5)',fg:'#ff8f90',fill:'#ff4d4f'};
   return{bg:'rgba(47,128,237,.13)',bd:'rgba(47,128,237,.5)',fg:'#8fc0ff',fill:'#2f80ed'};
 }
-
-/* ---------- grouping ---------- */
 function byTerr(){const g={};S.companies.forEach(c=>{(g[c.geo.terr]=g[c.geo.terr]||[]).push(c);});return g;}
 function byRegion(){const g={};S.companies.forEach(c=>{(g[c.geo.region]=g[c.geo.region]||[]).push(c);});return g;}
 
+/* ---------- avatar html ---------- */
+function avatarHTML(rep,level,size){
+  const sz=size||44;
+  return `<div class="ava" style="width:${sz}px;height:${sz}px;border-color:${rep.color};box-shadow:0 0 14px ${rep.color}44">
+    <span>${rep.emoji}</span>${level?`<span class="lvl" style="color:${rep.color}">L${level}</span>`:''}</div>`;
+}
+
 /* ============================ RENDER ============================ */
-function render(){
-  renderHeaderStats();
-  renderNav();
+function render(){ renderConsole(); renderNav();
   const v=S.view;
   if(v==='command')viewCommand();
   else if(v==='map')viewMap();
@@ -352,14 +407,27 @@ function render(){
   else if(v==='pipeline')viewPipeline();
   else if(v==='sectors')viewSectors();
 }
-function renderHeaderStats(){
-  const M=metricsFor(S.companies);
-  const sc=score(M);const {r,nx}=rankFor(sc);
-  $('#rankName').textContent=r.n;
-  $('#rankScore').textContent=nx?(sc+' XP - '+(nx.x-sc)+' to '+nx.n):(sc+' XP - MAX');
-  const gp=GLOBAL_POOL; const dpct=M.contacted/gp*100;
-  $('#gpool').textContent=gp.toLocaleString();
+function renderConsole(){
+  const total=metricsFor(S.companies);
+  const me=REP_BY_ID[S.me]||REPS[0];
+  const pxp=repXP(me.id); const li=levelInfo(pxp);
+  $('#meRow').innerHTML=`
+    ${avatarHTML(me,li.level)}
+    <div class="me-info">
+      <div class="nm">${esc(me.name)} <span style="font-size:10px;color:var(--dim2);font-weight:600">${esc(me.role)}</span></div>
+      <div class="rl">Lv ${li.level} &middot; ${pxp.toLocaleString()} XP &middot; ${esc(me.market)}</div>
+      <div class="xpwrap"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${me.color},#fff8)"></i></div>
+        <div class="xp-lab"><span>Lv ${li.level}</span><span>${li.into} / ${li.need} to Lv ${li.level+1}</span></div></div>
+    </div>
+    <div class="swap">&#9776;</div>`;
+  const dpct=total.contacted/GLOBAL_POOL*100;
+  $('#gpool').textContent=GLOBAL_POOL.toLocaleString();
   $('#gpct').textContent=fmtPct(dpct);
+  const ts=score(total);const {r}=rankFor(ts);
+  $('#chips').innerHTML=`<span class="chip">\u{1F396}️ Team <b>${r.n}</b></span>
+    <span class="chip">\u{1F4DE} <b>${total.contacted}</b> contacted</span>
+    <span class="chip">\u{1F3C6} <b>${total.won}</b> won</span>
+    <span class="chip">\u{1F6A9} <b>${total.rejected}</b> resisted</span>`;
   const cc=$('#cloudChip'); cc.textContent=S.cloud?'cloud synced':'local mode'; cc.classList.toggle('on',S.cloud);
   setTimeout(()=>{$('#gfill').style.width=Math.max(dpct,dpct>0?1.5:0)+'%';},60);
 }
@@ -369,165 +437,163 @@ function renderNav(){
 }
 function go(v){S.view=v;if(v!=='territory')S.terr=null;window.scrollTo(0,0);render();}
 
-/* ---------- HQ / Command ---------- */
+/* ---------- HQ ---------- */
 function viewCommand(){
   const M=metricsFor(S.companies);
   const regions=byRegion();
   const regionOrder=['United States','Canada','Mexico','European Union','United Kingdom','Rest of World','HQ / National'];
   const contactedTerr=new Set(S.companies.filter(c=>!c.rejected&&STAGE_IDX[c.stage]>=STAGE_IDX.reached).map(c=>c.geo.terr));
-  const app=$('#app');
   let h='';
+
+  /* SQUAD */
+  h+=`<h2 class="sec"><span class="dot"></span>Your Squad &mdash; tap to play as / view book</h2><div class="grid" style="gap:10px">`;
+  REPS.forEach(rep=>{
+    const list=S.companies.filter(c=>c.owner===rep.id);const m=metricsFor(list);
+    const xp=score(m);const li=levelInfo(xp);const isMe=rep.id===S.me;
+    h+=`<div class="rep ${isMe?'me':''}">
+      ${avatarHTML(rep,li.level)}
+      <div class="info">
+        <div class="rn">${esc(rep.name)} ${isMe?'<span class="youtag">YOU</span>':''}</div>
+        <div class="rm">${esc(rep.role)} &middot; ${esc(rep.market)} &middot; ${list.length} accounts</div>
+        <div class="xpwrap"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${rep.color},#fff8)"></i></div>
+          <div class="xp-lab"><span>Lv ${li.level} &middot; ${xp.toLocaleString()} XP</span><span>${m.contacted} contacted &middot; ${m.won} won</span></div></div>
+        <div class="rbtns">
+          <button class="mini-btn ${isMe?'on':''}" onclick="event.stopPropagation();setMeId('${rep.id}')">${isMe?'Playing as you':'Play as'}</button>
+          <button class="mini-btn" onclick="event.stopPropagation();viewBook('${rep.id}')">View book</button>
+          <button class="mini-btn" onclick="event.stopPropagation();renameRep('${rep.id}')">Rename</button>
+        </div>
+      </div>
+    </div>`;
+  });
+  h+=`</div>`;
+
+  /* EMPIRE STATUS */
   h+=`<h2 class="sec"><span class="dot"></span>Empire Status</h2>`;
   h+=`<div class="grid g4">
-    ${statTile(M.known,'Units','companies tracked')}
-    ${statTile(M.contacted,'Contacted','reached &amp; beyond','var(--green)')}
-    ${statTile(M.convo+M.won,'Engaged','in conversation +','var(--teal)')}
-    ${statTile(M.won,'Won','conquered','var(--gold)')}
-    ${statTile(contactedTerr.size,'Territories','with a foothold','var(--blue)')}
-    ${statTile(M.rejected,'Resisted','rejections','var(--red)')}
-    ${statTile(M.researched+M.prospect,'Backlog','not yet contacted','var(--dim)')}
-    ${statTile(fmtPct(M.contacted/GLOBAL_POOL*100),'World','domination','var(--teal)')}
+    ${statTile(M.known,'Units','all accounts',null,"go('pipeline')")}
+    ${statTile(M.contacted,'Contacted','reached &amp; beyond','var(--green)',"stageBoard('contacted')")}
+    ${statTile(M.convo+M.won,'Engaged','in conversation +','var(--teal)',"stageBoard('convo')")}
+    ${statTile(M.won,'Won','conquered','var(--gold)',"stageBoard('won')")}
+    ${statTile(contactedTerr.size,'Territories','with a foothold','var(--blue)',"go('map')")}
+    ${statTile(M.rejected,'Resisted','rejections','var(--red)',"stageBoard('rejected')")}
+    ${statTile(M.researched+M.prospect,'Backlog','not yet contacted','var(--dim)',"stageBoard('backlog')")}
+    ${statTile(fmtPct(M.contacted/GLOBAL_POOL*100),'World','domination','var(--teal)',"go('map')")}
   </div>`;
 
-  const sc=score(M);const {r,nx}=rankFor(sc);
-  const prevX=r.x, span=nx?(nx.x-prevX):1, prog=nx?Math.min(1,(sc-prevX)/span):1;
-  h+=`<h2 class="sec"><span class="dot"></span>Commander Rank</h2>
-  <div class="panel">
-    <div class="barlab"><b>${r.n}</b><span>${nx?nx.n+' at '+nx.x+' XP':'Max rank'}</span></div>
-    <div class="bar"><i style="width:${(prog*100).toFixed(1)}%;background:linear-gradient(90deg,var(--gold),#ffb800)"></i></div>
-    <div style="font-size:11px;color:var(--dim);margin-top:6px">${sc} XP total &middot; win a company (+150) &middot; start a conversation (+45) &middot; make contact (+20)</div>
-  </div>`;
-
+  /* THEATERS */
   h+=`<h2 class="sec"><span class="dot"></span>Theaters of Operation</h2><div class="panel">`;
   regionOrder.forEach(rg=>{
-    const list=regions[rg]||[];
-    const m=metricsFor(list);
-    let target;
-    if(rg==='United States')target=US_POOL;
-    else if(rg==='HQ / National')target=200;
-    else {const f=FRONTIER.find(f=>f.key===rg);target=f?f.pool:100;}
+    const m=metricsFor(regions[rg]||[]);
+    let target = rg==='United States'?US_POOL : (rg==='HQ / National'?200 : ((FRONTIER.find(f=>f.key===rg)||{}).pool||100));
     const pc=target?m.contacted/target*100:0;
     const flag=rg==='United States'?'\u{1F1FA}\u{1F1F8}':(FRONTIER.find(f=>f.key===rg)||{}).flag||'\u{1F3E2}';
     const col=m.contacted>0?'var(--green)':(m.known>0?'var(--blue)':'var(--line)');
     const click=rg==='United States'?`onclick="go('map')" style="cursor:pointer"`:(rg!=='HQ / National'?`onclick="openCountry('${rg}')" style="cursor:pointer"`:'');
-    h+=`<div class="rrow" ${click}>
-      <div class="flag">${flag}</div>
-      <div class="nm">${rg}</div>
+    h+=`<div class="rrow" ${click}><div class="flag">${flag}</div><div class="nm">${rg}</div>
       <div class="bwrap"><div class="bar"><i style="width:${Math.max(pc,m.contacted>0?2:0).toFixed(1)}%;background:${col}"></i></div>
-        <div style="font-size:10px;color:var(--dim2);margin-top:3px">${m.known} known &middot; ${m.contacted} contacted &middot; ~${target.toLocaleString()} est. targets</div></div>
-      <div class="pc">${fmtPct(pc)}</div>
-    </div>`;
+      <div style="font-size:10px;color:var(--dim2);margin-top:3px">${m.known} known &middot; ${m.contacted} contacted &middot; ~${target.toLocaleString()} est. targets</div></div>
+      <div class="pc">${fmtPct(pc)}</div></div>`;
   });
   h+=`</div>`;
 
   const frontierEmpty=FRONTIER.filter(f=>metricsFor(regions[f.key]||[]).contacted===0);
   if(frontierEmpty.length){
     h+=`<h2 class="sec"><span class="dot"></span>Expansion Frontier</h2>
-    <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Untouched theaters - first mover advantage. Tap to plan the invasion.</div>
-    <div class="grid g3">`;
+    <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Untouched theaters - first mover advantage.</div><div class="grid g3">`;
     frontierEmpty.forEach(f=>{h+=`<div class="fcard" onclick="openCountry('${f.key}')">
       <div class="top"><div class="fl">${f.flag}</div><div><div class="nm">${f.key}</div><div class="nt">${f.note}</div></div></div>
       <div style="margin-top:10px" class="bar"><i style="width:0%"></i></div>
       <div style="font-size:11px;color:var(--dim2);margin-top:6px">~${f.pool.toLocaleString()} est. targets &middot; 0 contacted</div></div>`;});
     h+=`</div>`;
   }
-  app.innerHTML=h;
+  $('#app').innerHTML=h;
 }
-function statTile(n,l,sub,col){return `<div class="stat"><div class="n" style="${col?'color:'+col:''}">${n}</div><div class="l">${l}</div><div class="sub">${sub||''}</div></div>`;}
+function statTile(n,l,sub,col,onclick){return `<div class="stat" ${onclick?`style="cursor:pointer" onclick="${onclick}"`:''}><div class="n" style="${col?'color:'+col:''}">${n}</div><div class="l">${l}</div><div class="sub">${sub||''}</div></div>`;}
+function viewBook(id){S.filter={terr:null,industry:null,stage:null,owner:id,q:''};go('pipeline');}
 
-/* ---------- War Map (USA) ---------- */
+/* ---------- War Map ---------- */
 function viewMap(){
   const g=byTerr();
   let h=`<h2 class="sec"><span class="dot"></span>United States &mdash; War Map</h2>
-  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 12px">Each state is a territory. Tap to see the sectors within and deploy your units.</div>
-  <div class="panel"><div class="maprow">`;
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 8px">Each state is a territory. Tap to see the sectors within, or jump to a board:</div>`;
+  h+=`<div class="subtabs">`+[['prospect','Prospects'],['researched','Researched'],['contacted','Contacted'],['convo','In Convo'],['won','Won'],['rejected','Rejected']].map(t=>`<button onclick="stageBoard('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
+  h+=`<div class="panel"><div class="maprow">`;
   const cells=[];
   STATES.forEach(st=>{
-    const list=g[st.ab]||[];const m=metricsFor(list);const t=stateTarget(st.ab);const col=terrColor(m,t);
+    const m=metricsFor(g[st.ab]||[]);const t=stateTarget(st.ab);const col=terrColor(m,t);
     const ctrl=t?Math.min(100,m.contacted/t*100):0;
     cells.push(`<div class="tile" style="grid-row:${st.rc[0]+1};grid-column:${st.rc[1]+1};background:${col.bg};border-color:${col.bd}" onclick="openState('${st.ab}')" title="${st.name}">
       ${m.known?`<div class="badge" style="background:${col.fill};color:${m.won>0?'#3a2a00':'#04121a'}">${m.known}</div>`:''}
       <div class="ab" style="color:${col.fg}">${st.ab}</div>
-      <div class="mini"><i style="width:${Math.max(ctrl,m.known?12:0)}%;background:${col.fill}"></i></div>
-    </div>`);
+      <div class="mini"><i style="width:${Math.max(ctrl,m.known?12:0)}%;background:${col.fill}"></i></div></div>`);
   });
-  h+=cells.join('');
-  h+=`</div>
-  <div class="legend">
-    <span><i style="background:#233043"></i>Unexplored</span>
-    <span><i style="background:#2f80ed"></i>Scouted</span>
-    <span><i style="background:#22c58b"></i>Contacted</span>
-    <span><i style="background:#ffd23f"></i>Won</span>
-    <span><i style="background:#ff4d4f"></i>Resistance</span>
-  </div></div>`;
+  h+=cells.join('')+`</div>
+  <div class="legend"><span><i style="background:#233043"></i>Unexplored</span><span><i style="background:#2f80ed"></i>Scouted</span>
+  <span><i style="background:#22c58b"></i>Contacted</span><span><i style="background:#ffd23f"></i>Won</span><span><i style="background:#ff4d4f"></i>Resistance</span></div></div>`;
 
-  const rankedStates=STATES.map(st=>({st,m:metricsFor(g[st.ab]||[]),t:stateTarget(st.ab)}))
-    .filter(x=>x.m.known>0).sort((a,b)=>b.m.contacted-a.m.contacted||b.m.known-a.m.known);
-  if(rankedStates.length){
-    h+=`<h2 class="sec"><span class="dot"></span>Active Fronts</h2><div class="panel">`;
-    rankedStates.forEach(({st,m,t})=>{const pc=t?m.contacted/t*100:0;const col=terrColor(m,t);
-      h+=`<div class="rrow" style="cursor:pointer" onclick="openState('${st.ab}')">
-        <div class="flag" style="font-size:12px;font-weight:900;color:${col.fg}">${st.ab}</div>
-        <div class="nm">${st.name}</div>
-        <div class="bwrap"><div class="bar"><i style="width:${Math.max(pc,2).toFixed(1)}%;background:${col.fill}"></i></div>
-        <div style="font-size:10px;color:var(--dim2);margin-top:3px">${m.known} known &middot; ${m.contacted} contacted &middot; ${m.won} won &middot; ${m.rejected} resisted &middot; ~${t} targets</div></div>
+  const ranked=STATES.map(st=>({st,m:metricsFor(g[st.ab]||[]),t:stateTarget(st.ab)})).filter(x=>x.m.known>0).sort((a,b)=>b.m.contacted-a.m.contacted||b.m.known-a.m.known);
+  if(ranked.length){h+=`<h2 class="sec"><span class="dot"></span>Active Fronts</h2><div class="panel">`;
+    ranked.forEach(({st,m,t})=>{const pc=t?m.contacted/t*100:0;const col=terrColor(m,t);
+      h+=`<div class="rrow" style="cursor:pointer" onclick="openState('${st.ab}')"><div class="flag" style="font-size:12px;font-weight:900;color:${col.fg}">${st.ab}</div>
+        <div class="nm">${st.name}</div><div class="bwrap"><div class="bar"><i style="width:${Math.max(pc,2).toFixed(1)}%;background:${col.fill}"></i></div>
+        <div style="font-size:10px;color:var(--dim2);margin-top:3px">${m.known} known &middot; ${m.contacted} contacted &middot; ${m.won} won &middot; ${m.rejected} resisted</div></div>
         <div class="pc">${fmtPct(pc)}</div></div>`;});
-    h+=`</div>`;
-  }
+    h+=`</div>`;}
 
   h+=`<h2 class="sec"><span class="dot"></span>International Frontier</h2><div class="grid g3">`;
-  FRONTIER.forEach(f=>{const list=g[f.key]||[];const m=metricsFor(list);const pc=f.pool?m.contacted/f.pool*100:0;const col=terrColor(m,f.pool);
-    h+=`<div class="fcard" onclick="openCountry('${f.key}')">
-      <div class="top"><div class="fl">${f.flag}</div><div><div class="nm">${f.key}</div><div class="nt">${m.known} known &middot; ${m.contacted} contacted</div></div></div>
+  FRONTIER.forEach(f=>{const m=metricsFor(g[f.key]||[]);const pc=f.pool?m.contacted/f.pool*100:0;const col=terrColor(m,f.pool);
+    h+=`<div class="fcard" onclick="openCountry('${f.key}')"><div class="top"><div class="fl">${f.flag}</div><div><div class="nm">${f.key}</div><div class="nt">${m.known} known &middot; ${m.contacted} contacted</div></div></div>
       <div style="margin-top:10px" class="bar"><i style="width:${Math.max(pc,m.known?3:0).toFixed(1)}%;background:${col.fill}"></i></div>
       <div style="font-size:11px;color:var(--dim2);margin-top:6px">${fmtPct(pc)} of ~${f.pool.toLocaleString()} targets</div></div>`;});
   h+=`</div>`;
   $('#app').innerHTML=h;
 }
-function openState(ab){S.terr={kind:'state',key:ab};S.view='territory';window.scrollTo(0,0);render();}
-function openCountry(key){S.terr={kind:'country',key};S.view='territory';window.scrollTo(0,0);render();}
+function openState(ab){S.terr={kind:'state',key:ab};S.terrTab='all';S.terrSector=null;S.view='territory';window.scrollTo(0,0);render();}
+function openCountry(key){S.terr={kind:'country',key};S.terrTab='all';S.terrSector=null;S.view='territory';window.scrollTo(0,0);render();}
+function stageBoard(stage){S.filter={terr:null,industry:null,stage,owner:null,q:''};go('pipeline');}
+function toggleSector(k){S.terrSector=(S.terrSector===k?null:k);render();const el=document.getElementById('unitsHead');if(el)el.scrollIntoView({behavior:'smooth',block:'start'});}
+function setTerrTab(t){S.terrTab=t;render();}
 
-/* ---------- Territory detail (sectors within) ---------- */
+/* ---------- Territory ---------- */
 function viewTerritory(){
   if(!S.terr){go('map');return;}
   const {kind,key}=S.terr;
   const name=kind==='state'?(STATE_BY_AB[key]?STATE_BY_AB[key].name:key):key;
   const flag=kind==='state'?'\u{1F1FA}\u{1F1F8}':(FRONTIER.find(f=>f.key===key)||{flag:'\u{1F30D}'}).flag;
-  const list=S.companies.filter(c=>c.geo.terr===key);
-  const M=metricsFor(list);
-  const target=territoryTarget(kind,key);
-  const pc=target?M.contacted/target*100:0;
-  const undiscovered=Math.max(0,target-M.known);
+  const list=S.companies.filter(c=>c.geo.terr===key);const M=metricsFor(list);
+  const target=territoryTarget(kind,key);const pc=target?M.contacted/target*100:0;const undiscovered=Math.max(0,target-M.known);
   let h=`<div class="crumb" onclick="go('${kind==='state'?'map':'command'}')">&larr; ${kind==='state'?'War Map':'HQ'}</div>`;
   h+=`<h2 class="sec" style="margin-top:8px"><span class="dot"></span>Territory Briefing</h2>
-  <div class="panel"><div class="terrhead">
-    <div style="font-size:30px">${flag}</div>
-    <div style="flex:1;min-width:180px">
-      <div class="big">${esc(name)}</div>
-      <div style="font-size:12px;color:var(--dim);margin-top:2px">${M.known} units deployed &middot; ${M.contacted} contacted &middot; ${M.won} won &middot; ${M.rejected} resisted</div>
+  <div class="panel"><div class="terrhead"><div style="font-size:30px">${flag}</div>
+    <div style="flex:1;min-width:180px"><div class="big">${esc(name)}</div>
+      <div style="font-size:12px;color:var(--dim);margin-top:2px">${M.known} units &middot; ${M.contacted} contacted &middot; ${M.won} won &middot; ${M.rejected} resisted</div>
       <div class="bar" style="margin-top:10px"><i style="width:${Math.max(pc,M.contacted?2:0).toFixed(1)}%;background:var(--green)"></i></div>
       <div style="font-size:11px;color:var(--dim2);margin-top:5px">${fmtPct(pc)} control &middot; ~${target.toLocaleString()} est. targets &middot; <span style="color:var(--dim)">${undiscovered.toLocaleString()} undiscovered</span></div>
-    </div>
-  </div></div>`;
-
-  h+=`<h2 class="sec"><span class="dot"></span>Sector Control &mdash; ${esc(name)}</h2><div class="grid g2">`;
+    </div></div></div>`;
+  h+=`<h2 class="sec"><span class="dot"></span>Sector Control &mdash; ${esc(name)} <span style="font-weight:600;text-transform:none;letter-spacing:0;color:var(--dim2);font-size:11px">&middot; tap to enter</span></h2><div class="grid g2">`;
   INDUSTRIES.forEach(ind=>{
     const cl=list.filter(c=>c.industry===ind.key);const m=metricsFor(cl);
-    const st=Math.max(1,Math.round(target*ind.weight));
-    const cpc=st?m.contacted/st*100:0;
-    const known=m.known, undis=Math.max(0,st-known);
-    h+=`<div class="panel sec-card">
+    const st=Math.max(1,Math.round(target*ind.weight));const cpc=st?m.contacted/st*100:0;const undis=Math.max(0,st-m.known);
+    const on=S.terrSector===ind.key;
+    h+=`<div class="panel sec-card" style="cursor:pointer;${on?'border-color:'+ind.color+';box-shadow:0 0 0 1px '+ind.color+'55':''}" onclick="toggleSector('${ind.key.replace(/'/g,"&#39;")}')">
       <div class="sc-top"><div class="sc-ic" style="background:${ind.color}22;border-color:${ind.color}55">${ind.icon}</div>
-      <div style="flex:1"><div class="sc-nm">${ind.key}</div><div class="sc-sub">${known} known &middot; ${m.contacted} contacted${m.rejected?' &middot; '+m.rejected+' resisted':''}</div></div></div>
-      <div class="bar"><i style="width:${Math.max(cpc,known?4:0).toFixed(1)}%;background:${ind.color}"></i></div>
-      <div style="font-size:10px;color:var(--dim2);margin-top:5px">${fmtPct(cpc)} of ~${st} targets &middot; <span class="ghost">${undis} undiscovered</span></div>
-    </div>`;
+      <div style="flex:1"><div class="sc-nm">${ind.key} ${on?'<span style="font-size:9px;color:'+ind.color+';font-weight:900">▶ ENTERED</span>':''}</div>
+      <div class="sc-sub">${m.known} known &middot; ${m.contacted} contacted${m.rejected?' &middot; '+m.rejected+' resisted':''}</div></div>
+      <div style="font-size:18px;font-weight:900;color:${ind.color}">${m.known}</div></div>
+      <div class="bar"><i style="width:${Math.max(cpc,m.known?4:0).toFixed(1)}%;background:${ind.color}"></i></div>
+      <div style="font-size:10px;color:var(--dim2);margin-top:5px">${fmtPct(cpc)} of ~${st} targets &middot; <span class="ghost">${undis} undiscovered</span></div></div>`;
   });
   h+=`</div>`;
 
-  h+=`<h2 class="sec"><span class="dot"></span>Units in ${esc(name)} (${list.length})</h2>`;
-  if(!list.length)h+=`<div class="empty">No units here yet. This is open ground &mdash; add a company or scout the sector list above.</div>`;
-  else h+=`<div class="grid g2">`+list.slice().sort((a,b)=>STAGE_IDX[b.stage]-STAGE_IDX[a.stage]).map(unitCard).join('')+`</div>`;
+  const tabs=[['all','All']].concat(STAGES.map(s=>[s.key,s.short])).concat([['rejected','Rejected']]);
+  h+=`<h2 class="sec" id="unitsHead"><span class="dot"></span>Units in ${esc(name)}</h2>`;
+  h+=`<div class="subtabs">`+tabs.map(t=>`<button class="${S.terrTab===t[0]?'on':''}" onclick="setTerrTab('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
+  let ulist=list.slice();
+  if(S.terrSector)ulist=ulist.filter(c=>c.industry===S.terrSector);
+  if(S.terrTab!=='all'){if(S.terrTab==='rejected')ulist=ulist.filter(c=>c.rejected);else ulist=ulist.filter(c=>!c.rejected&&c.stage===S.terrTab);}
+  if(S.terrSector)h+=`<div style="margin:0 0 10px"><span class="pill" style="cursor:pointer" onclick="toggleSector('${S.terrSector.replace(/'/g,"&#39;")}')">Sector: ${esc(S.terrSector)} &times;</span></div>`;
+  if(!ulist.length)h+=`<div class="empty">No units in this filter. Try another stage or sector, or add a company.</div>`;
+  else h+=`<div class="grid g2">`+ulist.sort((a,b)=>STAGE_IDX[b.stage]-STAGE_IDX[a.stage]).map(unitCard).join('')+`</div>`;
   $('#app').innerHTML=h;
 }
 
@@ -536,18 +602,27 @@ function viewPipeline(){
   const f=S.filter;
   let list=S.companies.slice();
   if(f.industry)list=list.filter(c=>c.industry===f.industry);
-  if(f.stage){if(f.stage==='rejected')list=list.filter(c=>c.rejected);else list=list.filter(c=>!c.rejected&&c.stage===f.stage);}
+  if(f.owner)list=list.filter(c=>c.owner===f.owner);
+  if(f.stage){
+    if(f.stage==='rejected')list=list.filter(c=>c.rejected);
+    else if(f.stage==='contacted')list=list.filter(c=>!c.rejected&&STAGE_IDX[c.stage]>=STAGE_IDX.reached);
+    else if(f.stage==='backlog')list=list.filter(c=>!c.rejected&&STAGE_IDX[c.stage]<STAGE_IDX.reached);
+    else list=list.filter(c=>!c.rejected&&c.stage===f.stage);
+  }
   if(f.terr)list=list.filter(c=>c.geo.terr===f.terr);
   if(f.q){const q=f.q.toLowerCase();list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.location||'').toLowerCase().includes(q)||(c.industry||'').toLowerCase().includes(q));}
   list.sort((a,b)=>STAGE_IDX[b.stage]-STAGE_IDX[a.stage]||(a.name||'').localeCompare(b.name||''));
-
   let h=`<h2 class="sec"><span class="dot"></span>Pipeline &mdash; ${list.length} units</h2>`;
   h+=`<div class="filters">
     <input id="fq" placeholder="Search company, city, sector..." value="${esc(f.q)}" oninput="S.filter.q=this.value;debounceP()">
+    <select onchange="S.filter.owner=this.value||null;render()"><option value="">All reps</option>${REPS.map(r=>`<option value="${r.id}" ${f.owner===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select>
     <select onchange="S.filter.industry=this.value||null;render()"><option value="">All sectors</option>${INDUSTRIES.map(i=>`<option ${f.industry===i.key?'selected':''}>${i.key}</option>`).join('')}</select>
-    <select onchange="S.filter.stage=this.value||null;render()"><option value="">All stages</option>${STAGES.map(s=>`<option value="${s.key}" ${f.stage===s.key?'selected':''}>${s.label}</option>`).join('')}<option value="rejected" ${f.stage==='rejected'?'selected':''}>Rejected</option></select>
+    <select onchange="S.filter.stage=this.value||null;render()"><option value="">All stages</option>${STAGES.map(s=>`<option value="${s.key}" ${f.stage===s.key?'selected':''}>${s.label}</option>`).join('')}<option value="contacted" ${f.stage==='contacted'?'selected':''}>Contacted (any)</option><option value="backlog" ${f.stage==='backlog'?'selected':''}>Backlog</option><option value="rejected" ${f.stage==='rejected'?'selected':''}>Rejected</option></select>
   </div>`;
-  if(f.terr){const tn=STATE_BY_AB[f.terr]?STATE_BY_AB[f.terr].name:f.terr;h+=`<div style="margin:-4px 0 10px"><span class="pill" style="cursor:pointer" onclick="S.filter.terr=null;render()">Territory: ${esc(tn)} &times;</span></div>`;}
+  const tags=[];
+  if(f.owner)tags.push(`<span class="pill" style="cursor:pointer" onclick="S.filter.owner=null;render()">Rep: ${esc(REP_BY_ID[f.owner].name)} &times;</span>`);
+  if(f.terr){const tn=STATE_BY_AB[f.terr]?STATE_BY_AB[f.terr].name:f.terr;tags.push(`<span class="pill" style="cursor:pointer" onclick="S.filter.terr=null;render()">Territory: ${esc(tn)} &times;</span>`);}
+  if(tags.length)h+=`<div style="margin:-4px 0 10px;display:flex;gap:6px;flex-wrap:wrap">${tags.join('')}</div>`;
   if(!list.length)h+=`<div class="empty">No units match. Adjust filters or add a company.</div>`;
   else h+=`<div class="grid g2">`+list.map(unitCard).join('')+`</div>`;
   $('#app').innerHTML=h;
@@ -559,29 +634,30 @@ let _pt;function debounceP(){clearTimeout(_pt);_pt=setTimeout(render,220);}
 function unitCard(c){
   const idx=S.companies.indexOf(c);
   const ind=IND_BY_KEY[c.industry]||{color:'#8c8c8c',icon:'\u{1F9ED}'};
-  const terrName=c.geo.terr;
-  const rej=c.rejected;
-  const sIdx=STAGE_IDX[c.stage];
+  const rep=REP_BY_ID[c.owner]||REPS[0];
+  const rej=c.rejected;const sIdx=STAGE_IDX[c.stage];
   const fillPct=rej?100:((STAGES[sIdx]?STAGES[sIdx].pct:0.3)*100);
   const fillCol=rej?REJ.color:(STAGES[sIdx]?STAGES[sIdx].color:'#5b6b7a');
-  const steps=STAGES.map((s,i)=>{
-    const done=!rej&&i<=sIdx;
-    return `<div class="step ${done?'done':''}" style="${done?'background:'+s.color+';border-color:transparent':''}" onclick="setStageIdx(${idx},'${s.key}')" title="${s.label}">${s.short}</div>`;
-  }).join('');
+  const steps=STAGES.map((s,i)=>{const done=!rej&&i<=sIdx;
+    return `<div class="step ${done?'done':''}" style="${done?'background:'+s.color+';border-color:transparent':''}" onclick="setStageIdx(${idx},'${s.key}')" title="${s.label}">${s.short}</div>`;}).join('');
   const stageLabel=rej?REJ.label:(STAGES[sIdx]?STAGES[sIdx].label:'');
+  const tel=telHref(c.phone);
+  let callHTML='';
+  if(tel){
+    callHTML=`<a class="callbtn" href="${tel}">\u{1F4DE} Call ${esc(prettyTel(tel))}</a>`;
+    if(c.phone && String(c.phone).replace(/[\d\s().+\/-]/g,'').length>2) callHTML+=`<div style="font-size:10px;color:var(--dim2);margin-top:5px;line-height:1.35">${esc(c.phone)}</div>`;
+  } else if(c.phone){ callHTML=`<span class="nocall">\u{1F517} ${esc(c.phone)}</span>`; }
   return `<div class="unit" style="${rej?'border-color:rgba(255,77,79,.4)':''}">
-    <div class="u-top">
-      <div style="flex:1">
-        <div class="u-nm">${esc(c.name)}</div>
-        <div class="u-meta">
-          <span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry||'')}</span>
-          <span class="terrpill">${esc(terrName)}</span>
-          ${c.location?`<span class="pill">${esc(c.location)}</span>`:''}
-        </div>
-      </div>
+    <div class="u-top"><div style="flex:1">
+      <div class="u-nm">${esc(c.name)}</div>
+      <div class="u-meta">
+        <span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry||'')}</span>
+        <span class="terrpill">${esc(c.geo.terr)}</span>
+        <span class="owner" style="border-color:${rep.color}66;color:${rep.color}" onclick="openOwner(${idx})">${rep.emoji} ${esc(rep.name)}</span>
+      </div></div>
       <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:${fillCol}">${stageLabel}</div></div>
     </div>
-    ${c.phone?`<div style="font-size:11px;color:var(--dim);margin-top:7px">\u{1F4DE} ${esc(c.phone)}</div>`:''}
+    ${callHTML}
     <div class="bar" style="margin-top:9px"><i style="width:${fillPct}%;background:${fillCol}"></i></div>
     <div class="steps">${steps}</div>
     <div class="u-actions">
@@ -589,98 +665,107 @@ function unitCard(c){
         :`<button class="btn adv" onclick="advance(${idx})">Advance &rarr;</button>
           ${c.stage==='convo'?`<button class="btn win sm" onclick="setStageIdx(${idx},'won')">Win \u{1F3C6}</button>`:''}
           <button class="btn rej sm" onclick="reject(${idx})">Reject</button>`}
-    </div>
-  </div>`;
+    </div></div>`;
 }
-async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;const won=key==='won'&&(c.stage!=='won'||c.rejected);await writeStage(c,key,false);if(won)toast('\u{1F3C6} '+c.name+' CONQUERED! +150 XP');else toast(c.name+' → '+statusForStage(key));render();}
-async function advance(i){const c=S.companies[i];if(!c)return;const ni=Math.min(STAGES.length-1,STAGE_IDX[c.stage]+1);const key=STAGES[ni].key;await writeStage(c,key,false);toast(c.name+' advanced to '+STAGES[ni].label);render();}
-async function reject(i){const c=S.companies[i];if(!c)return;await writeStage(c,c.stage,true);toast(c.name+' marked resisted');render();}
-async function reopen(i){const c=S.companies[i];if(!c)return;await writeStage(c,'reached',false);toast(c.name+' reopened');render();}
+function xpToast(c,prefix){
+  const rep=REP_BY_ID[c.owner]||REPS[0];
+  const d=Math.max(0,repXP(c.owner)-(c._before||0));
+  toast(prefix+(d>0?`  +${d} XP → ${rep.name}`:''));
+}
+async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;const before=repXP(c.owner);const bl=levelInfo(before).level;const won=key==='won'&&(c.stage!=='won'||c.rejected);await writeStage(c,key,false);const after=repXP(c.owner);const al=levelInfo(after).level;render();const rep=REP_BY_ID[c.owner]||REPS[0];if(al>bl)toast(`⬆️ LEVEL UP! ${rep.name} is now Lv ${al}`);else if(won)toast(`\u{1F3C6} ${c.name} CONQUERED!  +${after-before} XP → ${rep.name}`);else toast(`${c.name} → ${statusForStage(key)}  +${Math.max(0,after-before)} XP`);}
+async function advance(i){const c=S.companies[i];if(!c)return;const ni=Math.min(STAGES.length-1,STAGE_IDX[c.stage]+1);await setStageIdx(i,STAGES[ni].key);}
+async function reject(i){const c=S.companies[i];if(!c)return;await writeStage(c,c.stage,true);render();toast(c.name+' marked resisted');}
+async function reopen(i){const c=S.companies[i];if(!c)return;await writeStage(c,'reached',false);render();toast(c.name+' reopened');}
 
-/* ---------- Sectors (global industries) ---------- */
+/* ---------- Sectors ---------- */
 function viewSectors(){
   let h=`<h2 class="sec"><span class="dot"></span>Global Sector Command</h2>
   <div style="font-size:12px;color:var(--dim);margin:-4px 4px 12px">Your control across every industry vertical, worldwide.</div><div class="grid g2">`;
   INDUSTRIES.forEach(ind=>{
     const list=S.companies.filter(c=>c.industry===ind.key);const m=metricsFor(list);
     const target=Math.round(GLOBAL_POOL*ind.weight);const pc=target?m.contacted/target*100:0;
-    h+=`<div class="panel sec-card">
-      <div class="sc-top"><div class="sc-ic" style="background:${ind.color}22;border-color:${ind.color}55">${ind.icon}</div>
+    h+=`<div class="panel sec-card"><div class="sc-top"><div class="sc-ic" style="background:${ind.color}22;border-color:${ind.color}55">${ind.icon}</div>
       <div style="flex:1"><div class="sc-nm">${ind.key}</div><div class="sc-sub">${m.known} known &middot; ${m.contacted} contacted &middot; ${m.won} won</div></div>
       <div style="font-size:20px;font-weight:900;color:${ind.color}">${m.known}</div></div>
       <div class="barlab"><span>Contacted</span><b>${fmtPct(pc)}</b></div>
       <div class="bar"><i style="width:${Math.max(pc,m.known?3:0).toFixed(1)}%;background:${ind.color}"></i></div>
       <div style="display:flex;gap:6px;margin-top:9px">
         ${['prospect','researched','reached','convo','won'].map(k=>`<div style="flex:1;text-align:center"><div style="font-size:14px;font-weight:800">${m[k]||0}</div><div style="font-size:8px;color:var(--dim2);text-transform:uppercase">${STAGES.find(s=>s.key===k).short}</div></div>`).join('')}
-        <div style="flex:1;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--red)">${m.rejected}</div><div style="font-size:8px;color:var(--dim2);text-transform:uppercase">Rej</div></div>
-      </div>
-      <button class="btn sm" style="width:100%;margin-top:10px" onclick="filterSector('${ind.key.replace(/'/g,"&#39;")}')">View units &rarr;</button>
-    </div>`;
+        <div style="flex:1;text-align:center"><div style="font-size:14px;font-weight:800;color:var(--red)">${m.rejected}</div><div style="font-size:8px;color:var(--dim2);text-transform:uppercase">Rej</div></div></div>
+      <button class="btn sm" style="width:100%;margin-top:10px" onclick="filterSector('${ind.key.replace(/'/g,"&#39;")}')">View units &rarr;</button></div>`;
   });
-  h+=`</div>`;
-  $('#app').innerHTML=h;
+  h+=`</div>`;$('#app').innerHTML=h;
 }
-function filterSector(k){S.filter={terr:null,industry:k,stage:null,q:''};go('pipeline');}
+function filterSector(k){S.filter={terr:null,industry:k,stage:null,owner:null,q:''};go('pipeline');}
 
-/* ---------- Add company modal ---------- */
+/* ---------- modals: me / owner / rename / add ---------- */
+function openMe(){
+  const m=$('#modal');
+  m.innerHTML=`<h3>Who's playing?</h3><div style="font-size:12px;color:var(--dim)">Pick your profile. Every move you make earns XP for you and levels you up.</div>`
+    +REPS.map(rep=>{const xp=repXP(rep.id);const li=levelInfo(xp);
+      return `<div class="pick ${rep.id===S.me?'on':''}" onclick="setMeId('${rep.id}')">${avatarHTML(rep,li.level)}
+        <div style="flex:1"><div style="font-weight:800">${esc(rep.name)} ${rep.id===S.me?'<span class="youtag">YOU</span>':''}</div>
+        <div style="font-size:11px;color:var(--dim)">${esc(rep.role)} &middot; ${esc(rep.market)} &middot; Lv ${li.level} &middot; ${xp.toLocaleString()} XP</div></div></div>`;}).join('')
+    +`<div style="font-size:11px;color:var(--dim2);margin-top:12px">Tip: turn on Cloud Sync so each rep logs in on their own phone and their XP is tracked live across the team.</div>
+      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+function setMeId(id){try{localStorage.setItem('sq_me',id)}catch(e){}S.me=id;closeModal();render();toast('Playing as '+REP_BY_ID[id].name);}
+function renameRep(id){const cur=REP_BY_ID[id].name;const v=prompt('Rename this rep:',cur);if(v&&v.trim()){REP_BY_ID[id].name=v.trim();saveRepName(id,v.trim());render();toast('Renamed to '+v.trim());}}
+function openOwner(idx){
+  const c=S.companies[idx];if(!c)return;
+  const m=$('#modal');
+  m.innerHTML=`<h3>Assign account</h3><div style="font-size:12px;color:var(--dim)">Who owns <b>${esc(c.name)}</b>? They earn its XP.</div>`
+    +REPS.map(rep=>`<div class="pick ${rep.id===c.owner?'on':''}" onclick="setOwner(${idx},'${rep.id}')">${avatarHTML(rep,levelInfo(repXP(rep.id)).level)}
+        <div style="flex:1"><div style="font-weight:800">${esc(rep.name)}</div><div style="font-size:11px;color:var(--dim)">${esc(rep.market)}</div></div></div>`).join('')
+    +`<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button></div>`;
+  $('#modalBg').classList.add('show');
+}
 function openAdd(){
   const m=$('#modal');
   m.innerHTML=`<h3>Deploy a Unit</h3><div style="font-size:12px;color:var(--dim)">Add a company to the board.</div>
   <div class="field"><label>Company name *</label><input id="a_name" placeholder="Acme Foods"></div>
+  <div class="field"><label>Owner (rep)</label><select id="a_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===S.me?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
   <div class="field"><label>Sector</label><select id="a_ind">${INDUSTRIES.map(i=>`<option>${i.key}</option>`).join('')}</select></div>
   <div class="field"><label>Location (city, ST or country)</label><input id="a_loc" placeholder="Austin, TX"></div>
   <div class="field"><label>Stage</label><select id="a_stage">${STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}</select></div>
-  <div class="field"><label>Phone / channel</label><input id="a_phone" placeholder="(optional)"></div>
+  <div class="field"><label>Phone (tap-to-call)</label><input id="a_phone" placeholder="(843) 957-6111"></div>
   <div class="field"><label>Notes</label><textarea id="a_notes" rows="2" placeholder="(optional)"></textarea></div>
-  <div style="display:flex;gap:8px;margin-top:16px">
-    <button class="btn" onclick="closeModal()">Cancel</button>
-    <button class="btn adv" onclick="submitAdd()">Deploy</button>
-  </div>`;
-  $('#modalBg').classList.add('show');
-  setTimeout(()=>$('#a_name').focus(),50);
+  <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitAdd()">Deploy</button></div>`;
+  $('#modalBg').classList.add('show');setTimeout(()=>$('#a_name').focus(),50);
 }
 function closeModal(){$('#modalBg').classList.remove('show');}
 async function submitAdd(){
   const name=$('#a_name').value.trim();if(!name){toast('Name required');return;}
-  const o={name,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
-  closeModal();await addCompany(o);toast('✅ '+name+' deployed');render();
+  const o={name,owner:$('#a_owner').value,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
+  closeModal();await addCompany(o);render();toast('✅ '+name+' deployed to '+REP_BY_ID[o.owner].name);
 }
+async function signIn(){/* reserved for cloud */}
 
-/* ---------- cloud login ---------- */
+/* ---------- cloud login (tap chip) ---------- */
 function openCloud(){
   const m=$('#modal');
-  if(S.cloud){
-    m.innerHTML=`<h3>Cloud Sync</h3><div style="font-size:12px;color:var(--dim)">Signed in as <b style="color:var(--teal)">${esc(S.session&&S.session.user?S.session.user.email:'')}</b>. Your moves sync live to every device and rep.</div>
-    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button><button class="btn rej" onclick="signOut()">Sign out</button></div>`;
-  }else{
-    m.innerHTML=`<h3>Connect to Cloud</h3><div style="font-size:12px;color:var(--dim)">Sign in to sync this board live across your phone, laptop, and reps. Without it the game runs locally on this device.</div>
-    <div class="field"><label>Email</label><input id="c_email" type="email" placeholder="you@seaquest.app" autocomplete="username"></div>
-    <div class="field"><label>Password</label><input id="c_pw" type="password" placeholder="password" autocomplete="current-password"></div>
+  if(S.cloud){m.innerHTML=`<h3>Cloud Sync</h3><div style="font-size:12px;color:var(--dim)">Signed in as <b style="color:var(--teal)">${esc(S.session&&S.session.user?S.session.user.email:'')}</b>. Moves sync live across devices.</div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button><button class="btn rej" onclick="doSignOut()">Sign out</button></div>`;}
+  else{m.innerHTML=`<h3>Connect to Cloud</h3><div style="font-size:12px;color:var(--dim)">Sign in to sync this board live across your phone, laptop, and reps.</div>
+    <div class="field"><label>Email</label><input id="c_email" type="email" placeholder="you@seaquest.app"></div>
+    <div class="field"><label>Password</label><input id="c_pw" type="password" placeholder="password"></div>
     <div id="c_err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
-    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="signIn()">Sign in &amp; sync</button></div>
-    <div style="font-size:11px;color:var(--dim2);margin-top:12px">No login yet? Create one in Supabase &rarr; Authentication &rarr; Users &rarr; Add user (check Auto Confirm), then sign in here.</div>`;
-  }
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="doSignIn()">Sign in &amp; sync</button></div>
+    <div style="font-size:11px;color:var(--dim2);margin-top:12px">No login yet? Create one in Supabase &rarr; Authentication &rarr; Users &rarr; Add user (Auto Confirm), then sign in.</div>`;}
   $('#modalBg').classList.add('show');
 }
-async function signIn(){
-  if(!sb){toast('Cloud unavailable');return;}
-  const email=$('#c_email').value.trim(),pw=$('#c_pw').value;
-  const err=$('#c_err');err.style.display='none';
-  try{
-    const {data,error}=await sb.auth.signInWithPassword({email,password:pw});
-    if(error){err.textContent=error.message;err.style.display='block';return;}
-    S.cloud=true;S.session=data.session;
-    closeModal();await reload();render();toast('☁️ Cloud synced');
-  }catch(e){err.textContent='Sign-in failed';err.style.display='block';}
-}
-async function signOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;S.session=null;closeModal();await reload();render();toast('Signed out - local mode');}
+async function doSignIn(){if(!sb){toast('Cloud unavailable');return;}const email=$('#c_email').value.trim(),pw=$('#c_pw').value,err=$('#c_err');err.style.display='none';
+  try{const {data,error}=await sb.auth.signInWithPassword({email,password:pw});if(error){err.textContent=error.message;err.style.display='block';return;}
+    S.cloud=true;S.session=data.session;closeModal();await reload();render();toast('☁️ Cloud synced');}catch(e){err.textContent='Sign-in failed';err.style.display='block';}}
+async function doSignOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;S.session=null;closeModal();await reload();render();toast('Signed out - local mode');}
 
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
 $('#cloudChip').onclick=openCloud;
-$('#cloudChip').style.cursor='pointer';
 $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
 (async function boot(){
+  loadRepNames(); S.me=getMe();
   await initCloud();
   await reload();
   render();
