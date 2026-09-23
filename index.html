@@ -1215,29 +1215,44 @@ function researchHere(){const t=S.terr;if(!t)return;const loc=t.kind==='state'?(
 function researchPrompt(){
   const ind=$('#r_ind').value,loc=$('#r_loc').value.trim(),n=$('#r_n').value;
   const niche=$('#r_niche')?$('#r_niche').value:'';const nObj=NICHE_BY_ID[niche];
-  const where=loc?(' in '+loc):'';
-  const sector=ind?ind:'any sector we sell into (QSR/restaurant, foodservice distribution, packaging, coffee/beverage, industrial and ag sacks, nicotine/tobacco, ammunition)';
-  const focus=nObj?(" that specifically need "+nObj.name+" ("+nObj.note+")"):" that buy paper packaging at scale (brands, manufacturers, retailers or distributors)";
-  return "I'm a sales rep for SeaQuest Global, a veteran-owned company that supplies custom paper packaging (shopping bags, boxes, sacks, printed packaging) from our own factories. Help me build a prospecting list.\n\n"
-   +"Find "+n+" real companies in "+sector+where+focus+". Give real, current contact info where you can, and prefer procurement or packaging contacts.\n\n"
-   +"Output ONLY the list, one company per line, in this EXACT pipe-delimited format, with no header row and no other text:\n\n"
-   +"Company Name | Sector | City, ST | Contact name | Title | Email | Phone | One short note\n\n"
-   +"Leave a field blank if unknown but keep the pipes. Example:\nAcme Snacks | QSR / Restaurant | Austin, TX | Jane Doe | Procurement Lead | jane@acme.com | (512) 555-0100 | 200+ locations";
+  const where=loc?(' Focus on '+loc+'.'):'';
+  const sector=ind?('the '+ind+' sector'):'sectors we sell into (QSR/restaurant, foodservice distribution, packaging distributors, coffee/beverage, industrial & ag sacks, nicotine/tobacco, ammunition)';
+  const focus=nObj?(' Prioritize companies that specifically buy '+nObj.name+' ('+nObj.note+').'):'';
+  return [
+    "You are a B2B sales researcher for SeaQuest Global, a veteran-owned company that supplies custom paper packaging (shopping bags, boxes, multiwall sacks, printed packaging) from our own factories, with minimum orders around 20,000 units.",
+    "",
+    "Build me a prospecting list of "+n+" REAL companies in "+sector+" that buy paper packaging at meaningful volume."+where+focus,
+    "",
+    "Rules:",
+    "- Only real companies you are confident exist. Never invent names or contacts.",
+    "- Give a mix of mid-size and large companies (not only household names) so they are reachable.",
+    "- If a brand is owned by a larger parent that handles purchasing, list the parent company.",
+    "- For each, find the best real contact you can: prefer a procurement, packaging, purchasing, or operations decision-maker with their title, plus a company phone and a real email where you know it. If you are not confident of a direct email, leave it blank instead of guessing.",
+    "- No cannabis companies.",
+    "",
+    "Output ONLY the list, one company per line, in this EXACT pipe-delimited format. No header row, no numbering, no commentary before or after:",
+    "",
+    "Company Name | Sector | City, ST | Contact name | Title | Email | Phone | Short note (size, brands, or website)",
+    "",
+    "Leave a field blank if unknown but keep all the pipes. Example:",
+    "Acme Snacks | QSR / Restaurant | Austin, TX | Jane Doe | Director of Procurement | jane.doe@acme.com | (512) 555-0100 | ~200 locations, acmesnacks.com"
+  ].join("\n");
 }
 function launchResearch(){const niche=$('#r_niche')?$('#r_niche').value:'';if(niche)markNiche(niche);askClaude(researchPrompt());}
 function parseResearch(text){
   const out=[];
+  const clean=s=>String(s||'').replace(/\*\*/g,'').replace(/[`*_]/g,'').replace(/^\s*[>\-]\s*/,'').trim();
   String(text).split(/\r?\n/).forEach(raw=>{
     let l=raw.trim();
     if(!l.includes('|'))return;
     if(/^[-\s|:]+$/.test(l))return;                 // markdown separator row
-    let parts=l.split('|').map(s=>s.trim());
+    let parts=l.split('|').map(clean);
     // drop leading empty cell from markdown tables (| a | b |)
     if(parts.length&&parts[0]==='')parts.shift();
     if(parts.length&&parts[parts.length-1]==='')parts.pop();
-    let name=(parts[0]||'').replace(/^[-*\d.\)\s]+/,'').replace(/\*\*/g,'').trim();
+    let name=(parts[0]||'').replace(/^[-*\d.\)\s]+/,'').trim();
     if(!name)return;
-    if(/^company\s*name$/i.test(name)||/^company$/i.test(name))return; // header
+    if(/^(company\s*name|company|name)$/i.test(name))return; // header
     out.push({name,sector:parts[1]||'',location:parts[2]||'',contact:parts[3]||'',title:parts[4]||'',email:parts[5]||'',phone:parts[6]||'',note:parts[7]||''});
   });
   return out;
@@ -1272,7 +1287,8 @@ async function importResearch(){
   closeModal();
   await addCompaniesBulk(objs);
   addTrainingXP(S.me,gainXP);bumpStat(S.me,'added',objs.length);
-  logAct('Researched '+objs.length+' companies via Claude (+'+gainXP+' XP)');render();
+  logAct('Researched '+objs.length+' companies via Claude (+'+gainXP+' XP)');
+  S.filter={terr:null,industry:null,stage:null,owner:S.me,q:''};go('pipeline');
   toast('✅ Added '+objs.length+' companies  +'+gainXP+' XP'+(skipped?(' · '+skipped+' dupes skipped'):''));
 }
 async function signIn(){/* reserved for cloud */}
