@@ -185,12 +185,40 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 .empty{text-align:center;color:var(--dim2);padding:30px 10px;font-size:13px}
 .fab{position:fixed;right:18px;bottom:78px;width:54px;height:54px;border-radius:16px;border:none;z-index:50;
   background:linear-gradient(135deg,var(--teal),var(--blue));color:#04121a;font-size:26px;font-weight:900;cursor:pointer;box-shadow:0 8px 24px rgba(0,224,164,.4)}
+/* card action buttons */
+.uacts2{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.ib{flex:1;min-width:70px;display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12px;font-weight:800;
+  padding:9px 8px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);color:var(--tx);cursor:pointer;text-decoration:none}
+.ib:active{transform:scale(.97)}
+.ib.call{color:var(--teal);border-color:rgba(0,224,164,.35);background:rgba(0,224,164,.09)}
+.ib.mail{color:#8fc0ff;border-color:rgba(47,128,237,.35);background:rgba(47,128,237,.10)}
+.ib.edit{color:var(--dim)}
+.contactline{font-size:11px;color:var(--dim);margin-top:7px;display:flex;flex-direction:column;gap:2px}
+.hint{font-size:10px;color:var(--dim2);margin-top:5px;line-height:1.35}
+/* template / email */
+.tpl{white-space:pre-wrap;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px;font-size:13px;line-height:1.5;color:var(--tx);margin-top:8px;max-height:210px;overflow:auto}
+/* character sheet */
+.charhead{display:flex;align-items:center;gap:14px}
+.charhead .big{font-size:22px;font-weight:900}
+.statgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}
+.stmini{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px;text-align:center}
+.stmini .v{font-size:18px;font-weight:900}.stmini .k{font-size:9px;color:var(--dim2);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.badges{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.badge2{display:flex;align-items:center;gap:9px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}
+.badge2.lock{opacity:.38}
+.badge2 .bi{font-size:22px;flex:0 0 auto}
+.badge2 .bt{font-weight:800;font-size:12px}.badge2 .bd{font-size:10px;color:var(--dim)}
+/* minigame */
+.pitch-bar{position:relative;height:46px;border-radius:12px;border:1px solid var(--line);overflow:hidden;background:#0c1420;margin-top:14px;cursor:pointer}
+.pitch-zone{position:absolute;top:0;bottom:0;background:linear-gradient(90deg,rgba(34,197,139,.22),rgba(0,224,164,.33),rgba(34,197,139,.22))}
+.pitch-bull{position:absolute;top:0;bottom:0;background:rgba(255,210,63,.55)}
+.pitch-marker{position:absolute;top:-3px;bottom:-3px;width:4px;background:#fff;box-shadow:0 0 10px #fff;border-radius:2px}
 @media(max-width:640px){
   .g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}
   .maprow{gap:3px}.tile .ab{font-size:9px}
   .rrow .nm{min-width:92px;font-size:12px}
 }
-@media(max-width:400px){.g2{grid-template-columns:1fr}}
+@media(max-width:400px){.g2{grid-template-columns:1fr}.statgrid{grid-template-columns:repeat(2,1fr)}.badges{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -253,6 +281,7 @@ const $=s=>document.querySelector(s);
 const esc=x=>(x==null?'':String(x)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),2400);}
 function fmtPct(p){ if(p>=10)return p.toFixed(0)+'%'; if(p>=1)return p.toFixed(1)+'%'; if(p>=0.01)return p.toFixed(2)+'%'; if(p>0)return p.toFixed(4)+'%'; return '0%'; }
+function timeAgo(t){const s=Math.floor((Date.now()-t)/1000);if(s<60)return 'just now';const m=Math.floor(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago';}
 
 function deriveStage(status){
   const s=(status||'').toLowerCase();
@@ -307,21 +336,67 @@ function territoryTarget(kind,key){
 
 /* ---------- persistence ---------- */
 const LS='sq_ov_v2';
-function loadOv(){try{return JSON.parse(localStorage.getItem(LS))||{byName:{},added:[],owners:{}}}catch(e){return{byName:{},added:[],owners:{}}}}
+function loadOv(){try{const o=JSON.parse(localStorage.getItem(LS))||{};o.byName=o.byName||{};o.added=o.added||[];o.owners=o.owners||{};o.edits=o.edits||{};return o;}catch(e){return{byName:{},added:[],owners:{},edits:{}}}}
 function saveOv(o){try{localStorage.setItem(LS,JSON.stringify(o))}catch(e){}}
 function getMe(){try{return localStorage.getItem('sq_me')||REPS[0].id}catch(e){return REPS[0].id}}
 function loadRepNames(){try{const n=JSON.parse(localStorage.getItem('sq_repnames')||'{}');Object.keys(n).forEach(id=>{if(REP_BY_ID[id])REP_BY_ID[id].name=n[id];});}catch(e){}}
 function saveRepName(id,name){try{const n=JSON.parse(localStorage.getItem('sq_repnames')||'{}');n[id]=name;localStorage.setItem('sq_repnames',JSON.stringify(n));}catch(e){}}
+/* rep activity stats + training XP */
+function loadStats(){try{return JSON.parse(localStorage.getItem('sq_stats')||'{}')}catch(e){return{}}}
+function saveStats(s){try{localStorage.setItem('sq_stats',JSON.stringify(s))}catch(e){}}
+function repStat(id){const s=loadStats();return Object.assign({calls:0,emails:0,xp:0,games:0},s[id]||{});}
+function bumpStat(id,key,n){const s=loadStats();s[id]=Object.assign({calls:0,emails:0,xp:0,games:0},s[id]||{});s[id][key]=(s[id][key]||0)+(n||1);saveStats(s);bumpQuest(key,n||1);}
+function addTrainingXP(id,n){const s=loadStats();s[id]=Object.assign({calls:0,emails:0,xp:0,games:0},s[id]||{});s[id].xp=(s[id].xp||0)+n;saveStats(s);}
+/* activity feed */
+function loadActs(){try{return JSON.parse(localStorage.getItem('sq_acts')||'[]')}catch(e){return[]}}
+function logAct(text){try{const a=loadActs();a.unshift({t:Date.now(),text,who:S.me});localStorage.setItem('sq_acts',JSON.stringify(a.slice(0,50)));}catch(e){}}
+/* daily quests + streak */
+const QUESTS=[
+  {key:'calls',   label:'Dial 5 prospects',   goal:5, xp:40, icon:'\u{1F4DE}'},
+  {key:'emails',  label:'Send 3 intro emails', goal:3, xp:35, icon:'✉️'},
+  {key:'advances',label:'Advance 3 accounts',  goal:3, xp:45, icon:'⚔️'},
+  {key:'wins',    label:'Close 1 deal',        goal:1, xp:120,icon:'\u{1F3C6}'}
+];
+function today(){return new Date().toISOString().slice(0,10);}
+function yesterday(){const d=new Date();d.setDate(d.getDate()-1);return d.toISOString().slice(0,10);}
+function loadQuests(){
+  let q;try{q=JSON.parse(localStorage.getItem('sq_quests')||'null');}catch(e){q=null;}
+  if(!q)q={date:today(),prog:{},claimed:{},streak:0,dayCounted:''};
+  if(q.date!==today()){ if(q.dayCounted!==yesterday())q.streak=0; q.date=today();q.prog={};q.claimed={};q.dayCounted=''; saveQuests(q); }
+  return q;
+}
+function saveQuests(q){try{localStorage.setItem('sq_quests',JSON.stringify(q))}catch(e){}}
+function bumpQuest(key,n){
+  const q=loadQuests();q.prog[key]=(q.prog[key]||0)+(n||1);
+  QUESTS.filter(Q=>Q.key===key).forEach(Q=>{
+    if(!q.claimed[Q.key]&&q.prog[Q.key]>=Q.goal){
+      q.claimed[Q.key]=true; addTrainingXP(S.me,Q.xp);
+      if(q.dayCounted!==today()){q.streak=(q.streak||0)+1;q.dayCounted=today();}
+      setTimeout(()=>{toast(`${Q.icon} Quest complete: ${Q.label}  +${Q.xp} XP`);},250);
+    }
+  });
+  saveQuests(q);
+}
 
 /* ---------- model ---------- */
+function extractEmail(){const s=Array.prototype.filter.call(arguments,Boolean).join(' ');const m=s.match(/[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}/);return m?m[0]:'';}
+function pick(a,b){return (a!=null&&a!=='')?a:(b!=null?b:'');}
 function buildModel(list){
-  const ov=loadOv();const owners=ov.owners||{};
+  const ov=loadOv();const owners=ov.owners||{};const edits=ov.edits||{};
   return list.map(raw=>{
-    const geo=parseGeo(raw.location);
+    const e=edits[raw.name]||{};
+    const industry=pick(e.industry,raw.industry)||'Prospecting / Other';
+    const location=pick(e.location,raw.location);
+    const phone=pick(e.phone,raw.phone);
+    const notes=pick(e.notes,raw.notes);
+    const contact=pick(e.contact,raw.contact);
+    const title=pick(e.title,raw.title);
+    const nextStep=pick(e.nextStep,raw.nextStep);
+    const email=pick(e.email,raw.email)||extractEmail(notes,phone);
+    const geo=parseGeo(location);
     const rej=(typeof raw._rejected==='boolean')?raw._rejected:isRejected(raw.status);
     const owner=owners[raw.name]||raw.owner||defaultOwner(geo.region);
-    return {id:raw.id,name:raw.name,industry:raw.industry||'Prospecting / Other',
-      location:raw.location,status:raw.status,phone:raw.phone,notes:raw.notes,
+    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,
       geo,rejected:rej,stage:deriveStage(raw.status),owner};
   });
 }
@@ -376,7 +451,7 @@ function metricsFor(companies){
 }
 function score(m){return m.researched*5+m.reached*20+m.convo*45+m.won*150+m.rejected*4;}
 function rankFor(x){let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(x>=RANKS[i].x){r=RANKS[i];nx=RANKS[i+1]||null;}}return{r,nx};}
-function repXP(id){return score(metricsFor(S.companies.filter(c=>c.owner===id)));}
+function repXP(id){return score(metricsFor(S.companies.filter(c=>c.owner===id)))+(repStat(id).xp||0);}
 function levelInfo(xp){let lvl=1,need=200,rem=xp;while(rem>=need){rem-=need;lvl++;need=Math.round(need*1.35);}return{level:lvl,into:rem,need,pct:need?rem/need:0};}
 
 /* ---------- colors ---------- */
@@ -406,6 +481,7 @@ function render(){ renderConsole(); renderNav();
   else if(v==='territory')viewTerritory();
   else if(v==='pipeline')viewPipeline();
   else if(v==='sectors')viewSectors();
+  else if(v==='rep')viewRep();
 }
 function renderConsole(){
   const total=metricsFor(S.companies);
@@ -445,22 +521,34 @@ function viewCommand(){
   const contactedTerr=new Set(S.companies.filter(c=>!c.rejected&&STAGE_IDX[c.stage]>=STAGE_IDX.reached).map(c=>c.geo.terr));
   let h='';
 
+  /* DAILY OPS */
+  const q=loadQuests();
+  h+=`<h2 class="sec"><span class="dot"></span>Daily Ops <span style="font-weight:800;color:var(--gold);font-size:11px;text-transform:none;letter-spacing:0">&middot; \u{1F525} ${q.streak||0} day streak</span></h2><div class="panel">`;
+  QUESTS.forEach(Q=>{const prog=Math.min(Q.goal,q.prog[Q.key]||0);const done=q.claimed[Q.key];const pc=Q.goal?prog/Q.goal*100:0;
+    h+=`<div class="rrow"><div class="flag">${Q.icon}</div><div class="nm" style="min-width:120px">${Q.label}</div>
+      <div class="bwrap"><div class="bar"><i style="width:${pc}%;background:${done?'var(--gold)':'var(--teal)'}"></i></div>
+      <div style="font-size:10px;color:var(--dim2);margin-top:3px">${prog}/${Q.goal} &middot; +${Q.xp} XP${done?' &middot; ✅':''}</div></div>
+      <div class="pc">${done?'✅':pc.toFixed(0)+'%'}</div></div>`;});
+  h+=`<div style="font-size:11px;color:var(--dim2);margin-top:8px">Complete quests to earn training XP for <b style="color:var(--teal)">${esc((REP_BY_ID[S.me]||REPS[0]).name)}</b> and keep your streak alive.</div></div>`;
+
   /* SQUAD */
-  h+=`<h2 class="sec"><span class="dot"></span>Your Squad &mdash; tap to play as / view book</h2><div class="grid" style="gap:10px">`;
-  REPS.forEach(rep=>{
+  h+=`<h2 class="sec"><span class="dot"></span>Your Squad &mdash; tap a rep for their character</h2><div class="grid" style="gap:10px">`;
+  const roster=REPS.map(rep=>({rep,xp:repXP(rep.id)})).sort((a,b)=>b.xp-a.xp);
+  const medals=['\u{1F947}','\u{1F948}','\u{1F949}'];
+  roster.forEach((row,ri)=>{const rep=row.rep;
     const list=S.companies.filter(c=>c.owner===rep.id);const m=metricsFor(list);
-    const xp=score(m);const li=levelInfo(xp);const isMe=rep.id===S.me;
-    h+=`<div class="rep ${isMe?'me':''}">
+    const xp=row.xp;const li=levelInfo(xp);const isMe=rep.id===S.me;
+    h+=`<div class="rep ${isMe?'me':''}" style="cursor:pointer" onclick="openRep('${rep.id}')">
       ${avatarHTML(rep,li.level)}
       <div class="info">
-        <div class="rn">${esc(rep.name)} ${isMe?'<span class="youtag">YOU</span>':''}</div>
-        <div class="rm">${esc(rep.role)} &middot; ${esc(rep.market)} &middot; ${list.length} accounts</div>
+        <div class="rn">${ri<3?medals[ri]+' ':''}${esc(rep.name)} ${isMe?'<span class="youtag">YOU</span>':''}</div>
+        <div class="rm">${titleForLevel(li.level)} &middot; ${esc(rep.market)} &middot; ${list.length} accounts</div>
         <div class="xpwrap"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${rep.color},#fff8)"></i></div>
           <div class="xp-lab"><span>Lv ${li.level} &middot; ${xp.toLocaleString()} XP</span><span>${m.contacted} contacted &middot; ${m.won} won</span></div></div>
         <div class="rbtns">
-          <button class="mini-btn ${isMe?'on':''}" onclick="event.stopPropagation();setMeId('${rep.id}')">${isMe?'Playing as you':'Play as'}</button>
-          <button class="mini-btn" onclick="event.stopPropagation();viewBook('${rep.id}')">View book</button>
-          <button class="mini-btn" onclick="event.stopPropagation();renameRep('${rep.id}')">Rename</button>
+          <button class="mini-btn ${isMe?'on':''}" onclick="event.stopPropagation();setMeId('${rep.id}')">${isMe?'You':'Play as'}</button>
+          <button class="mini-btn" onclick="event.stopPropagation();openRep('${rep.id}')">Character</button>
+          <button class="mini-btn" onclick="event.stopPropagation();viewBook('${rep.id}')">Book</button>
         </div>
       </div>
     </div>`;
@@ -504,6 +592,13 @@ function viewCommand(){
       <div class="top"><div class="fl">${f.flag}</div><div><div class="nm">${f.key}</div><div class="nt">${f.note}</div></div></div>
       <div style="margin-top:10px" class="bar"><i style="width:0%"></i></div>
       <div style="font-size:11px;color:var(--dim2);margin-top:6px">~${f.pool.toLocaleString()} est. targets &middot; 0 contacted</div></div>`;});
+    h+=`</div>`;
+  }
+  const acts=loadActs();
+  if(acts.length){
+    h+=`<h2 class="sec"><span class="dot"></span>Recent Activity</h2><div class="panel">`;
+    acts.slice(0,8).forEach(a=>{const rep=REP_BY_ID[a.who]||{emoji:'\u{1F464}'};
+      h+=`<div class="rrow"><div class="flag">${rep.emoji}</div><div style="flex:1;font-size:12px">${esc(a.text)}</div><div style="font-size:10px;color:var(--dim2);white-space:nowrap">${timeAgo(a.t)}</div></div>`;});
     h+=`</div>`;
   }
   $('#app').innerHTML=h;
@@ -642,11 +737,17 @@ function unitCard(c){
     return `<div class="step ${done?'done':''}" style="${done?'background:'+s.color+';border-color:transparent':''}" onclick="setStageIdx(${idx},'${s.key}')" title="${s.label}">${s.short}</div>`;}).join('');
   const stageLabel=rej?REJ.label:(STAGES[sIdx]?STAGES[sIdx].label:'');
   const tel=telHref(c.phone);
-  let callHTML='';
-  if(tel){
-    callHTML=`<a class="callbtn" href="${tel}">\u{1F4DE} Call ${esc(prettyTel(tel))}</a>`;
-    if(c.phone && String(c.phone).replace(/[\d\s().+\/-]/g,'').length>2) callHTML+=`<div style="font-size:10px;color:var(--dim2);margin-top:5px;line-height:1.35">${esc(c.phone)}</div>`;
-  } else if(c.phone){ callHTML=`<span class="nocall">\u{1F517} ${esc(c.phone)}</span>`; }
+  const cbits=[];
+  if(c.contact)cbits.push(`\u{1F464} ${esc(c.contact)}${c.title?' &middot; '+esc(c.title):''}`);
+  if(c.email)cbits.push(`✉️ ${esc(c.email)}`);
+  if(c.nextStep)cbits.push(`⏭️ ${esc(c.nextStep)}`);
+  const contactLine=cbits.length?`<div class="contactline">${cbits.map(x=>`<span>${x}</span>`).join('')}</div>`:'';
+  const hint=(c.phone && String(c.phone).replace(/[\d\s().+\/\-]/g,'').length>2)?`<div class="hint">${esc(c.phone)}</div>`:'';
+  const tools=`<div class="uacts2">
+    ${tel?`<a class="ib call" href="${tel}" onclick="trackCall(${idx})">\u{1F4DE} Call</a>`:''}
+    <button class="ib mail" onclick="openEmail(${idx})">✉️ Email</button>
+    <button class="ib edit" onclick="openEdit(${idx})">✎ Edit</button>
+  </div>`;
   return `<div class="unit" style="${rej?'border-color:rgba(255,77,79,.4)':''}">
     <div class="u-top"><div style="flex:1">
       <div class="u-nm">${esc(c.name)}</div>
@@ -657,7 +758,7 @@ function unitCard(c){
       </div></div>
       <div style="text-align:right"><div style="font-size:10px;font-weight:800;color:${fillCol}">${stageLabel}</div></div>
     </div>
-    ${callHTML}
+    ${contactLine}${hint}
     <div class="bar" style="margin-top:9px"><i style="width:${fillPct}%;background:${fillCol}"></i></div>
     <div class="steps">${steps}</div>
     <div class="u-actions">
@@ -665,17 +766,23 @@ function unitCard(c){
         :`<button class="btn adv" onclick="advance(${idx})">Advance &rarr;</button>
           ${c.stage==='convo'?`<button class="btn win sm" onclick="setStageIdx(${idx},'won')">Win \u{1F3C6}</button>`:''}
           <button class="btn rej sm" onclick="reject(${idx})">Reject</button>`}
-    </div></div>`;
+    </div>
+    ${tools}</div>`;
 }
-function xpToast(c,prefix){
-  const rep=REP_BY_ID[c.owner]||REPS[0];
-  const d=Math.max(0,repXP(c.owner)-(c._before||0));
-  toast(prefix+(d>0?`  +${d} XP → ${rep.name}`:''));
-}
-async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;const before=repXP(c.owner);const bl=levelInfo(before).level;const won=key==='won'&&(c.stage!=='won'||c.rejected);await writeStage(c,key,false);const after=repXP(c.owner);const al=levelInfo(after).level;render();const rep=REP_BY_ID[c.owner]||REPS[0];if(al>bl)toast(`⬆️ LEVEL UP! ${rep.name} is now Lv ${al}`);else if(won)toast(`\u{1F3C6} ${c.name} CONQUERED!  +${after-before} XP → ${rep.name}`);else toast(`${c.name} → ${statusForStage(key)}  +${Math.max(0,after-before)} XP`);}
+async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;
+  const oldIdx=c.rejected?-1:STAGE_IDX[c.stage];const before=repXP(c.owner);const bl=levelInfo(before).level;
+  const newIdx=STAGE_IDX[key];const won=key==='won'&&(c.stage!=='won'||c.rejected);
+  await writeStage(c,key,false);
+  if(newIdx>oldIdx)bumpQuest('advances',1);
+  if(won)bumpQuest('wins',1);
+  const after=repXP(c.owner);const al=levelInfo(after).level;const rep=REP_BY_ID[c.owner]||REPS[0];
+  logAct((won?'Won ':'Advanced ')+c.name);render();
+  if(al>bl){celebrate();toast(`⬆️ LEVEL UP! ${rep.name} is now Lv ${al}`);}
+  else if(won){celebrate();toast(`\u{1F3C6} ${c.name} CONQUERED!  +${after-before} XP → ${rep.name}`);}
+  else toast(`${c.name} → ${statusForStage(key)}  +${Math.max(0,after-before)} XP`);}
 async function advance(i){const c=S.companies[i];if(!c)return;const ni=Math.min(STAGES.length-1,STAGE_IDX[c.stage]+1);await setStageIdx(i,STAGES[ni].key);}
-async function reject(i){const c=S.companies[i];if(!c)return;await writeStage(c,c.stage,true);render();toast(c.name+' marked resisted');}
-async function reopen(i){const c=S.companies[i];if(!c)return;await writeStage(c,'reached',false);render();toast(c.name+' reopened');}
+async function reject(i){const c=S.companies[i];if(!c)return;await writeStage(c,c.stage,true);logAct('Rejected '+c.name);render();toast(c.name+' marked resisted');}
+async function reopen(i){const c=S.companies[i];if(!c)return;await writeStage(c,'reached',false);logAct('Reopened '+c.name);render();toast(c.name+' reopened');}
 
 /* ---------- Sectors ---------- */
 function viewSectors(){
@@ -705,9 +812,11 @@ function openMe(){
     +REPS.map(rep=>{const xp=repXP(rep.id);const li=levelInfo(xp);
       return `<div class="pick ${rep.id===S.me?'on':''}" onclick="setMeId('${rep.id}')">${avatarHTML(rep,li.level)}
         <div style="flex:1"><div style="font-weight:800">${esc(rep.name)} ${rep.id===S.me?'<span class="youtag">YOU</span>':''}</div>
-        <div style="font-size:11px;color:var(--dim)">${esc(rep.role)} &middot; ${esc(rep.market)} &middot; Lv ${li.level} &middot; ${xp.toLocaleString()} XP</div></div></div>`;}).join('')
+        <div style="font-size:11px;color:var(--dim)">${titleForLevel(li.level)} &middot; ${esc(rep.market)} &middot; Lv ${li.level} &middot; ${xp.toLocaleString()} XP</div></div>
+        <button class="mini-btn" onclick="event.stopPropagation();renameRep('${rep.id}')">Rename</button></div>`;}).join('')
     +`<div style="font-size:11px;color:var(--dim2);margin-top:12px">Tip: turn on Cloud Sync so each rep logs in on their own phone and their XP is tracked live across the team.</div>
-      <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+      <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button class="btn" onclick="closeModal()">Close</button>
+      <button class="btn sm" onclick="exportData()">\u{1F4BE} Backup</button><button class="btn sm" onclick="importData()">\u{1F4E5} Restore</button></div>`;
   $('#modalBg').classList.add('show');
 }
 function setMeId(id){try{localStorage.setItem('sq_me',id)}catch(e){}S.me=id;closeModal();render();toast('Playing as '+REP_BY_ID[id].name);}
@@ -759,6 +868,199 @@ async function doSignIn(){if(!sb){toast('Cloud unavailable');return;}const email
   try{const {data,error}=await sb.auth.signInWithPassword({email,password:pw});if(error){err.textContent=error.message;err.style.display='block';return;}
     S.cloud=true;S.session=data.session;closeModal();await reload();render();toast('☁️ Cloud synced');}catch(e){err.textContent='Sign-in failed';err.style.display='block';}}
 async function doSignOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;S.session=null;closeModal();await reload();render();toast('Signed out - local mode');}
+
+/* ---------- clipboard / claude ---------- */
+function copyText(t){try{navigator.clipboard.writeText(t);}catch(e){try{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}catch(e2){}}}
+function askClaude(prompt){copyText(prompt);try{window.open('https://claude.ai/new','_blank');}catch(e){}toast('✨ Prompt copied - paste into Claude');}
+
+/* ---------- email templates ---------- */
+const EMAIL_TPLS=[
+  {id:'buyer',label:'Find the buyer (cold)',subject:'Paper packaging for [Company]',
+   body:"Hi [Name],\n\nI'm [Rep] with SeaQuest Global, a veteran owned company with our own sustainable paper factories overseas. Could you point me to whoever handles packaging or vendor purchasing at [Company]?\n\nHappy to put a quick quote together.\n\n[Rep]\nSeaQuest Global"},
+  {id:'procurement',label:'Procurement / purchasing',subject:'Custom paper packaging - [Company]',
+   body:"Hi [Name],\n\nI'm [Rep] with SeaQuest Global. We make custom paper bags, boxes and printed packaging from our own factories, and I'd like to quote your program. What sizes and volumes are you running?\n\nThanks,\n[Rep]\nSeaQuest Global"},
+  {id:'owner',label:'Owner / GM',subject:'Packaging for [Company]',
+   body:"Hi [Name],\n\nI'm [Rep] with SeaQuest Global, a veteran owned paper packaging company. We help brands like [Company] source custom bags and boxes from our own factories. Who on your team handles packaging so I can send a quick quote?\n\n[Rep]"},
+  {id:'marketing',label:'Marketing / brand',subject:'Branded paper packaging for [Company]',
+   body:"Hi [Name],\n\nI'm [Rep] with SeaQuest Global. We produce custom printed paper bags and boxes from our own factories and work with brands on look, feel and sustainability. Would it help to see what we can do for [Company]?\n\n[Rep]"},
+  {id:'followup',label:'Follow up',subject:'Following up - packaging for [Company]',
+   body:"Hi [Name],\n\nJust following up on my note about paper packaging for [Company]. Want me to put together a quick quote around your specs?\n\nThanks,\n[Rep]"},
+  {id:'referral',label:'Referred / warm intro',subject:'[Referrer] suggested I reach out',
+   body:"Hi [Name],\n\n[Referrer] pointed me your way. I'm [Rep] with SeaQuest Global, we run our own paper factories and supply custom bags and boxes. Could I send a quick quote for [Company]?\n\n[Rep]"},
+  {id:'voicemail',label:'Voicemail / call script',subject:'',
+   body:"Hi [Name], this is [Rep] with SeaQuest Global, a veteran owned paper packaging company. We help brands like [Company] source custom bags and boxes from our own factories. You can reach me at [your number], and I'll follow up by email too. Thanks!"}
+];
+function fillTpl(str,c,rep){return String(str).replace(/\[Name\]/g,c.contact||'there').replace(/\[Company\]/g,c.name||'your company').replace(/\[Rep\]/g,rep.name).replace(/\[Title\]/g,c.title||'');}
+function trackCall(i){const c=S.companies[i];if(!c)return;bumpStat(S.me,'calls');logAct('Called '+c.name);}
+function openEmail(idx){
+  const c=S.companies[idx];if(!c)return;const rep=REP_BY_ID[S.me]||REPS[0];
+  const m=$('#modal');
+  m.innerHTML=`<h3>Email ${esc(c.name)}</h3>
+    <div style="font-size:12px;color:var(--dim)">Pick an outline, tweak it, then open your mail app, copy it, or have Claude write it.</div>
+    <div class="field"><label>To</label><input id="e_to" type="email" value="${esc(c.email||'')}" placeholder="name@company.com"></div>
+    <div class="field"><label>Template (by who you're contacting)</label>
+      <select id="e_tpl" onchange="refillEmail(${idx})">${EMAIL_TPLS.map(t=>`<option value="${t.id}">${t.label}</option>`).join('')}</select></div>
+    <div class="field"><label>Subject</label><input id="e_sub"></div>
+    <div class="field"><label>Message</label><textarea id="e_body" rows="8"></textarea></div>
+    <div class="uacts2" style="margin-top:14px">
+      <button class="ib mail" onclick="sendMail(${idx})">✉️ Open in mail app</button>
+      <button class="ib" onclick="copyEmail()">\u{1F4CB} Copy</button>
+      <button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="claudeEmail(${idx})">✨ Ask Claude</button>
+    </div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  $('#modalBg').classList.add('show');
+  refillEmail(idx);
+}
+function refillEmail(idx){const c=S.companies[idx];const rep=REP_BY_ID[S.me]||REPS[0];const t=EMAIL_TPLS.find(x=>x.id===$('#e_tpl').value)||EMAIL_TPLS[0];
+  $('#e_sub').value=fillTpl(t.subject,c,rep);$('#e_body').value=fillTpl(t.body,c,rep);}
+function sendMail(idx){const c=S.companies[idx];const to=$('#e_to').value.trim();const sub=$('#e_sub').value;const body=$('#e_body').value;
+  const href='mailto:'+encodeURIComponent(to)+'?subject='+encodeURIComponent(sub)+'&body='+encodeURIComponent(body);
+  const a=document.createElement('a');a.href=href;a.click();bumpStat(S.me,'emails');logAct('Emailed '+c.name);toast('Opening your mail app...');}
+function copyEmail(){const sub=$('#e_sub').value;const body=$('#e_body').value;copyText((sub?sub+'\n\n':'')+body);bumpStat(S.me,'emails');toast('\u{1F4CB} Email copied');}
+function claudeEmail(idx){const c=S.companies[idx];const rep=REP_BY_ID[S.me]||REPS[0];
+  const prompt='Write a short, warm cold-outreach email (2 to 3 sentences, no em-dashes) from '+rep.name+' at SeaQuest Global, a veteran owned company with our own sustainable paper factories overseas. Recipient: '+(c.contact||'the packaging or purchasing contact')+(c.title?(' ('+c.title+')'):'')+' at '+c.name+' ('+(c.industry||'')+', '+(c.location||'')+'). Goal: reach whoever handles packaging or vendor purchasing and offer to put together a quick quote. Rules: do not quote prices; position us as the US sales arm for our factories worldwide; never say we represent, broker, or factory-direct; keep it human and brief.';
+  askClaude(prompt);}
+
+/* ---------- edit company ---------- */
+function openEdit(idx){
+  const c=S.companies[idx];if(!c)return;
+  const m=$('#modal');
+  m.innerHTML=`<h3>Edit ${esc(c.name)}</h3><div style="font-size:12px;color:var(--dim)">Update contact info as it comes in. Saves to this device (and syncs the shared fields when cloud is on).</div>
+    <div class="field"><label>Contact name</label><input id="ed_contact" value="${esc(c.contact||'')}" placeholder="Jane Doe"></div>
+    <div class="field"><label>Title / role</label><input id="ed_title" value="${esc(c.title||'')}" placeholder="VP Procurement"></div>
+    <div class="field"><label>Email</label><input id="ed_email" type="email" value="${esc(c.email||'')}" placeholder="jane@company.com"></div>
+    <div class="field"><label>Phone / channel</label><input id="ed_phone" value="${esc(c.phone||'')}" placeholder="(843) 957-6111"></div>
+    <div class="field"><label>Owner (rep)</label><select id="ed_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===c.owner?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
+    <div class="field"><label>Sector</label><select id="ed_ind">${INDUSTRIES.map(i=>`<option ${i.key===c.industry?'selected':''}>${i.key}</option>`).join('')}</select></div>
+    <div class="field"><label>Location</label><input id="ed_loc" value="${esc(c.location||'')}" placeholder="Austin, TX"></div>
+    <div class="field"><label>Stage</label><select id="ed_stage">${STAGES.map(s=>`<option value="${s.key}" ${s.key===c.stage&&!c.rejected?'selected':''}>${s.label}</option>`).join('')}<option value="rejected" ${c.rejected?'selected':''}>Rejected</option></select></div>
+    <div class="field"><label>Next step / follow-up</label><input id="ed_next" value="${esc(c.nextStep||'')}" placeholder="Call back Fri, ask for samples"></div>
+    <div class="field"><label>Notes</label><textarea id="ed_notes" rows="3">${esc(c.notes||'')}</textarea></div>
+    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitEdit(${idx})">Save</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+async function submitEdit(idx){
+  const c=S.companies[idx];if(!c)return;const name=c.name;
+  const patch={contact:$('#ed_contact').value.trim(),title:$('#ed_title').value.trim(),email:$('#ed_email').value.trim(),
+    phone:$('#ed_phone').value.trim(),industry:$('#ed_ind').value,location:$('#ed_loc').value.trim(),
+    nextStep:$('#ed_next').value.trim(),notes:$('#ed_notes').value};
+  const owner=$('#ed_owner').value;const stageVal=$('#ed_stage').value;
+  const ov=loadOv();ov.edits[name]=Object.assign({},ov.edits[name]||{},patch);ov.owners[name]=owner;saveOv(ov);
+  if(stageVal==='rejected'){if(!c.rejected)await writeStage(c,c.stage,true);}
+  else if(stageVal!==c.stage||c.rejected){await writeStage(c,stageVal,false);}
+  if(S.cloud&&sb&&c.id){try{await sb.from('companies').update({industry:patch.industry,location:patch.location,phone_channel:patch.phone,notes:patch.notes}).eq('id',c.id);}catch(e){}}
+  closeModal();await reload();render();logAct('Updated '+name);toast('✅ Updated '+name);
+}
+
+/* ---------- character sheet ---------- */
+const TITLES=['Rookie Rep','Prospector','Dialer','Closer','Account Exec','Regional Lead','Sales Captain','Rainmaker','Kingpin','Legend'];
+function titleForLevel(l){return TITLES[Math.min(l-1,TITLES.length-1)];}
+function openRep(id){S.repId=id;S.view='rep';window.scrollTo(0,0);render();}
+function viewRep(){
+  const id=S.repId;const rep=REP_BY_ID[id];if(!rep){go('command');return;}
+  const list=S.companies.filter(c=>c.owner===id);const m=metricsFor(list);const st=repStat(id);
+  const xp=repXP(id);const li=levelInfo(xp);const acctXP=score(m);
+  const badges=[
+    {i:'\u{1F4DE}',t:'First Contact',d:'Reach 1 account',ok:m.contacted>=1},
+    {i:'☎️',t:'Dialed In',d:'50 calls logged',ok:st.calls>=50},
+    {i:'✉️',t:'Pen Pal',d:'25 emails sent',ok:st.emails>=25},
+    {i:'\u{1F91D}',t:'In The Room',d:'3 conversations',ok:(m.convo+m.won)>=3},
+    {i:'\u{1F3C6}',t:'First Blood',d:'Win 1 deal',ok:m.won>=1},
+    {i:'\u{1F451}',t:'Conqueror',d:'Win 5 deals',ok:m.won>=5},
+    {i:'\u{1F3AF}',t:'Sharpshooter',d:'Play Pitch x10',ok:(st.games||0)>=10},
+    {i:'\u{1F30D}',t:'Globalist',d:'Own 2+ regions',ok:new Set(list.map(c=>c.geo.region)).size>=2}
+  ];
+  let h=`<div class="crumb" onclick="go('command')">&larr; HQ</div>`;
+  h+=`<h2 class="sec" style="margin-top:8px"><span class="dot"></span>Character Sheet</h2>
+  <div class="panel"><div class="charhead">${avatarHTML(rep,li.level,60)}
+    <div style="flex:1;min-width:160px"><div class="big">${esc(rep.name)}</div>
+      <div style="font-size:12px;color:${rep.color};font-weight:800">${titleForLevel(li.level)} &middot; Lv ${li.level}</div>
+      <div style="font-size:11px;color:var(--dim);margin-top:2px">${esc(rep.role)} &middot; ${esc(rep.market)}</div></div></div>
+    <div class="xpwrap" style="margin-top:12px"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${rep.color},#fff8)"></i></div>
+      <div class="xp-lab"><span>${xp.toLocaleString()} XP total</span><span>${li.into} / ${li.need} to Lv ${li.level+1}</span></div></div>
+    <div style="font-size:10px;color:var(--dim2);margin-top:6px">${acctXP.toLocaleString()} from accounts &middot; ${(st.xp||0).toLocaleString()} from training</div>
+    <div class="uacts2" style="margin-top:12px">
+      <button class="ib" style="color:${rep.color}" onclick="openPitch()">\u{1F3AF} Pitch Meter</button>
+      <button class="ib ${id===S.me?'':''}" onclick="setMeId('${id}')">${id===S.me?'⭐ You':'Play as'}</button>
+      <button class="ib" onclick="viewBook('${id}')">\u{1F4C2} Book</button>
+      <button class="ib" style="color:var(--purple)" onclick="askClaude('Give me 5 short cold-call opener scripts (2 sentences each, no em-dashes) for a veteran-owned paper packaging company called SeaQuest Global that sources custom bags and boxes from its own factories overseas. Do not quote prices.')">✨ Scripts</button>
+    </div></div>`;
+  h+=`<h2 class="sec"><span class="dot"></span>Field Report</h2>
+  <div class="statgrid">
+    ${stMini(list.length,'Accounts')}${stMini(m.contacted,'Contacted')}${stMini(m.convo+m.won,'Convos')}${stMini(m.won,'Wins')}
+    ${stMini(m.rejected,'Rejects')}${stMini(st.calls,'Calls')}${stMini(st.emails,'Emails')}${stMini(st.games||0,'Pitches')}
+  </div>`;
+  const earned=badges.filter(b=>b.ok).length;
+  h+=`<h2 class="sec"><span class="dot"></span>Achievements (${earned}/${badges.length})</h2><div class="badges">`
+    +badges.map(b=>`<div class="badge2 ${b.ok?'':'lock'}"><div class="bi">${b.i}</div><div><div class="bt">${b.t}</div><div class="bd">${b.d}</div></div></div>`).join('')+`</div>`;
+  $('#app').innerHTML=h;
+}
+function stMini(v,k){return `<div class="stmini"><div class="v">${v}</div><div class="k">${k}</div></div>`;}
+
+/* ---------- Pitch Meter minigame ---------- */
+let _pitch=null;
+function openPitch(){
+  const rep=REP_BY_ID[S.me]||REPS[0];
+  const m=$('#modal');
+  m.innerHTML=`<h3>\u{1F3AF} Pitch Meter</h3><div style="font-size:12px;color:var(--dim)">Tap when the marker hits the zone. 5 pitches. Land the gold bullseye for max XP. Training XP levels up <b style="color:${rep.color}">${esc(rep.name)}</b>.</div>
+    <div id="pitchStat" style="display:flex;justify-content:space-between;margin-top:14px;font-size:13px;font-weight:800"><span>Pitch <span id="pShot">1</span>/5</span><span>Score <span id="pScore" style="color:var(--teal)">0</span> XP</span></div>
+    <div class="pitch-bar" id="pBar" onclick="pitchTap()">
+      <div class="pitch-zone" id="pZone"></div><div class="pitch-bull" id="pBull"></div><div class="pitch-marker" id="pMark" style="left:0%"></div></div>
+    <div id="pMsg" style="text-align:center;font-size:13px;color:var(--dim);margin-top:10px;min-height:18px"></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="stopPitch();closeModal()">Close</button><button class="btn adv" id="pBtn" onclick="pitchTap()">Lock in</button></div>`;
+  $('#modalBg').classList.add('show');
+  _pitch={shot:1,score:0,pos:0,dir:1,speed:1.6,running:true,raf:null};
+  nextPitch();
+}
+function nextPitch(){
+  if(!_pitch)return;
+  const zoneW=18+Math.random()*10, zoneL=8+Math.random()*(74-zoneW);
+  _pitch.zoneL=zoneL;_pitch.zoneW=zoneW;_pitch.bullL=zoneL+zoneW/2-3;_pitch.bullW=6;
+  _pitch.speed=1.4+_pitch.shot*0.25;_pitch.pos=0;_pitch.dir=1;_pitch.running=true;
+  const z=$('#pZone'),b=$('#pBull');if(z){z.style.left=zoneL+'%';z.style.width=zoneW+'%';}if(b){b.style.left=_pitch.bullL+'%';b.style.width=_pitch.bullW+'%';}
+  cancelAnimationFrame(_pitch.raf);loopPitch();
+}
+function loopPitch(){
+  if(!_pitch||!_pitch.running)return;
+  _pitch.pos+=_pitch.dir*_pitch.speed;
+  if(_pitch.pos>=100){_pitch.pos=100;_pitch.dir=-1;}if(_pitch.pos<=0){_pitch.pos=0;_pitch.dir=1;}
+  const mk=$('#pMark');if(mk)mk.style.left=_pitch.pos+'%';
+  _pitch.raf=requestAnimationFrame(loopPitch);
+}
+function pitchTap(){
+  if(!_pitch||!_pitch.running)return;_pitch.running=false;cancelAnimationFrame(_pitch.raf);
+  const p=_pitch.pos;let gain=0,msg='';
+  if(p>=_pitch.bullL&&p<=_pitch.bullL+_pitch.bullW){gain=50;msg='\u{1F3AF} BULLSEYE! +50 XP';}
+  else if(p>=_pitch.zoneL&&p<=_pitch.zoneL+_pitch.zoneW){gain=25;msg='✅ Solid pitch +25 XP';}
+  else{gain=4;msg='\u{1F615} Missed the pocket +4 XP';}
+  _pitch.score+=gain;const sc=$('#pScore');if(sc)sc.textContent=_pitch.score;const mg=$('#pMsg');if(mg)mg.textContent=msg;
+  if(_pitch.shot>=5){finishPitch();return;}
+  _pitch.shot++;const sh=$('#pShot');if(sh)sh.textContent=_pitch.shot;
+  setTimeout(()=>{if(_pitch)nextPitch();},700);
+}
+function finishPitch(){
+  const total=_pitch?_pitch.score:0;addTrainingXP(S.me,total);bumpStat(S.me,'games',1);logAct('Trained (Pitch Meter) +'+total+' XP');
+  const mg=$('#pMsg');if(mg)mg.innerHTML=`<b style="color:var(--teal)">Session done: +${total} XP</b>`;
+  const btn=$('#pBtn');if(btn){btn.textContent='Play again';btn.setAttribute('onclick','openPitch()');}
+  if(total>=180)celebrate();stopPitch();render();
+}
+function stopPitch(){if(_pitch){_pitch.running=false;cancelAnimationFrame(_pitch.raf);}}
+
+/* ---------- celebration ---------- */
+(function(){const s=document.createElement('style');s.textContent='@keyframes sqfall{to{transform:translateY(110vh) rotate(720deg);opacity:0}}';document.head.appendChild(s);})();
+function celebrate(){try{if(navigator.vibrate)navigator.vibrate([25,35,25]);}catch(e){}
+  const cols=['#00e0a4','#2f80ed','#ffd23f','#ff7a45','#b37feb','#22c58b'];
+  const box=document.createElement('div');box.style.cssText='position:fixed;inset:0;pointer-events:none;z-index:100;overflow:hidden';
+  for(let i=0;i<30;i++){const p=document.createElement('div');const c=cols[i%cols.length];
+    p.style.cssText='position:absolute;top:-14px;left:'+(Math.random()*100)+'%;width:'+(6+Math.random()*8)+'px;height:'+(5+Math.random()*7)+'px;background:'+c+';border-radius:2px;animation:sqfall '+(1200+Math.random()*900)+'ms '+(Math.random()*200)+'ms ease-in forwards';
+    box.appendChild(p);}
+  document.body.appendChild(box);setTimeout(()=>box.remove(),2500);}
+
+/* ---------- backup ---------- */
+function exportData(){const keys=['sq_ov_v2','sq_stats','sq_quests','sq_acts','sq_me','sq_repnames'];const dump={};keys.forEach(k=>{try{const v=localStorage.getItem(k);if(v!=null)dump[k]=v;}catch(e){}});
+  const blob=new Blob([JSON.stringify(dump)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='seaquest-backup-'+today()+'.json';a.click();toast('\u{1F4BE} Backup downloaded');}
+function importData(){const inp=document.createElement('input');inp.type='file';inp.accept='application/json';
+  inp.onchange=()=>{const f=inp.files[0];if(!f)return;const r=new FileReader();r.onload=async()=>{try{const d=JSON.parse(r.result);Object.keys(d).forEach(k=>{if(d[k]!=null)localStorage.setItem(k,d[k]);});loadRepNames();S.me=getMe();await reload();closeModal();render();toast('✅ Backup restored');}catch(e){toast('Import failed');}};r.readAsText(f);};inp.click();}
 
 /* ---------- boot ---------- */
 $('#fab').onclick=openAdd;
