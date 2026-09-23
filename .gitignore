@@ -1,0 +1,10 @@
+# OS / editor junk
+.DS_Store
+Thumbs.db
+desktop.ini
+*.log
+
+# Never commit secrets. The app only uses the PUBLIC anon key (safe in config.js).
+# The Supabase service_role key must NEVER live in this repo.
+.env
+*.secret
