@@ -698,6 +698,7 @@ function viewTerritory(){
   const tabs=[['all','All']].concat(STAGES.map(s=>[s.key,s.short])).concat([['rejected','Rejected']]);
   h+=`<h2 class="sec" id="unitsHead"><span class="dot"></span>Units in ${esc(name)}</h2>`;
   h+=`<div class="subtabs">`+tabs.map(t=>`<button class="${S.terrTab===t[0]?'on':''}" onclick="setTerrTab('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
+  h+=`<button class="btn adv" style="margin:0 0 12px;max-width:280px" onclick="addHere()">➕ Add account in ${esc(name)}${S.terrSector?' &middot; '+esc(S.terrSector):''}</button>`;
   let ulist=list.slice();
   if(S.terrSector)ulist=ulist.filter(c=>c.industry===S.terrSector);
   if(S.terrTab!=='all'){if(S.terrTab==='rejected')ulist=ulist.filter(c=>c.rejected);else ulist=ulist.filter(c=>!c.rejected&&c.stage===S.terrTab);}
@@ -846,24 +847,31 @@ function openOwner(idx){
     +`<div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Cancel</button></div>`;
   $('#modalBg').classList.add('show');
 }
-function openAdd(){
+function openAdd(prefill){
+  prefill=prefill||{};
   const m=$('#modal');
   m.innerHTML=`<h3>Deploy a Unit</h3><div style="font-size:12px;color:var(--dim)">Add a company to the board.</div>
   <div class="field"><label>Company name *</label><input id="a_name" placeholder="Acme Foods"></div>
-  <div class="field"><label>Owner (rep)</label><select id="a_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===S.me?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
-  <div class="field"><label>Sector</label><select id="a_ind">${INDUSTRIES.map(i=>`<option>${i.key}</option>`).join('')}</select></div>
-  <div class="field"><label>Location (city, ST or country)</label><input id="a_loc" placeholder="Austin, TX"></div>
-  <div class="field"><label>Stage</label><select id="a_stage">${STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}</select></div>
+  <div class="field"><label>Owner (rep)</label><select id="a_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===(prefill.owner||S.me)?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
+  <div class="field"><label>Sector</label><select id="a_ind">${INDUSTRIES.map(i=>`<option ${i.key===prefill.industry?'selected':''}>${i.key}</option>`).join('')}</select></div>
+  <div class="field"><label>Location (city, ST or country)</label><input id="a_loc" value="${esc(prefill.location||'')}" placeholder="Austin, TX"></div>
+  <div class="field"><label>Contact name</label><input id="a_contact" placeholder="(optional)"></div>
+  <div class="field"><label>Title / role</label><input id="a_title" placeholder="(optional)"></div>
+  <div class="field"><label>Email</label><input id="a_email" type="email" placeholder="(optional)"></div>
   <div class="field"><label>Phone (tap-to-call)</label><input id="a_phone" placeholder="(843) 957-6111"></div>
+  <div class="field"><label>Stage</label><select id="a_stage">${STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}</select></div>
   <div class="field"><label>Notes</label><textarea id="a_notes" rows="2" placeholder="(optional)"></textarea></div>
   <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitAdd()">Deploy</button></div>`;
   $('#modalBg').classList.add('show');setTimeout(()=>$('#a_name').focus(),50);
 }
+function addHere(){const t=S.terr;if(!t)return;const loc=t.kind==='state'?(STATE_BY_AB[t.key]?STATE_BY_AB[t.key].name:t.key):'';openAdd({location:loc,industry:S.terrSector||undefined});}
 function closeModal(){$('#modalBg').classList.remove('show');}
 async function submitAdd(){
   const name=$('#a_name').value.trim();if(!name){toast('Name required');return;}
-  const o={name,owner:$('#a_owner').value,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
-  closeModal();await addCompany(o);render();toast('✅ '+name+' deployed to '+REP_BY_ID[o.owner].name);
+  const o={name,owner:$('#a_owner').value,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),
+    contact:$('#a_contact').value.trim(),title:$('#a_title').value.trim(),email:$('#a_email').value.trim(),
+    status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
+  closeModal();await addCompany(o);logAct('Added '+name);render();toast('✅ '+name+' deployed to '+REP_BY_ID[o.owner].name);
 }
 async function signIn(){/* reserved for cloud */}
 
