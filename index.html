@@ -274,7 +274,7 @@ const RANKS=[
 
 let sb=null;
 const S={view:'command',companies:[],cloud:false,session:null,me:REPS[0].id,
-  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
+  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, qp:{industry:null,scope:'me',idx:0}, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -452,7 +452,8 @@ function metricsFor(companies){
 function score(m){return m.researched*5+m.reached*20+m.convo*45+m.won*150+m.rejected*4;}
 function rankFor(x){let r=RANKS[0],nx=null;for(let i=0;i<RANKS.length;i++){if(x>=RANKS[i].x){r=RANKS[i];nx=RANKS[i+1]||null;}}return{r,nx};}
 function repXP(id){return score(metricsFor(S.companies.filter(c=>c.owner===id)))+(repStat(id).xp||0);}
-function levelInfo(xp){let lvl=1,need=200,rem=xp;while(rem>=need){rem-=need;lvl++;need=Math.round(need*1.35);}return{level:lvl,into:rem,need,pct:need?rem/need:0};}
+function levelInfo(xp){const STEP=25,MAX=100;const cum=L=>STEP*L*(L-1)/2;let lvl=1;while(lvl<MAX&&cum(lvl+1)<=xp)lvl++;const base=cum(lvl),next=cum(lvl+1);const into=Math.floor(xp-base),need=Math.max(1,Math.floor(next-base));return{level:lvl,into,need,pct:lvl>=MAX?1:into/need,max:lvl>=MAX};}
+function xpRight(li){return li.max?'MAX LEVEL 100':(li.into.toLocaleString()+' / '+li.need.toLocaleString()+' to Lv '+(li.level+1));}
 
 /* ---------- colors ---------- */
 function terrColor(m,target){
@@ -482,7 +483,60 @@ function render(){ renderConsole(); renderNav();
   else if(v==='pipeline')viewPipeline();
   else if(v==='sectors')viewSectors();
   else if(v==='hitlist')viewHitList();
+  else if(v==='quickplay')viewQuickPlay();
   else if(v==='rep')viewRep();
+}
+function qpQueue(){
+  const me=REP_BY_ID[S.me]||REPS[0];
+  let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
+  if(S.qp.scope==='me')pool=pool.filter(c=>c.owner===me.id);
+  if(S.qp.industry)pool=pool.filter(c=>c.industry===S.qp.industry);
+  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(telHref(c.phone))p+=8;if(c.email)p+=4;return p;};
+  return pool.sort((a,b)=>pr(b)-pr(a)||(a.name||'').localeCompare(b.name||''));
+}
+function qpSetInd(k){S.qp.industry=k||null;S.qp.idx=0;render();}
+function qpNext(){const q=qpQueue();if(S.qp.idx<q.length-1){S.qp.idx++;window.scrollTo(0,0);render();}else{toast('End of the list — nice work \u{1F44F}');}}
+function qpPrev(){if(S.qp.idx>0){S.qp.idx--;window.scrollTo(0,0);render();}}
+function viewQuickPlay(){
+  const me=REP_BY_ID[S.me]||REPS[0];
+  const queue=qpQueue();
+  if(S.qp.idx>=queue.length)S.qp.idx=Math.max(0,queue.length-1);
+  let h=`<h2 class="sec"><span class="dot"></span>Quick Play &mdash; one at a time</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Pick a sector, then call or email the account in front of you and hit Next. No noise, just the next call.</div>`;
+  h+=`<div class="subtabs"><button class="${S.qp.scope==='me'?'on':''}" onclick="S.qp.scope='me';S.qp.idx=0;render()">My list</button><button class="${S.qp.scope==='all'?'on':''}" onclick="S.qp.scope='all';S.qp.idx=0;render()">Whole team</button></div>`;
+  h+=`<div class="subtabs"><button class="${!S.qp.industry?'on':''}" onclick="qpSetInd('')">All sectors</button>`+INDUSTRIES.map(i=>`<button class="${S.qp.industry===i.key?'on':''}" onclick="qpSetInd('${i.key.replace(/'/g,"&#39;")}')">${i.icon} ${esc(i.key.split(' ')[0])}</button>`).join('')+`</div>`;
+  if(!queue.length){h+=`<div class="empty">Nothing left to call in ${esc(S.qp.industry||'any sector')} for ${S.qp.scope==='me'?esc(me.name):'the team'}. Switch sector or scope, or add accounts.</div>`;$('#app').innerHTML=h;return;}
+  h+=qpSlide(queue[S.qp.idx],S.qp.idx,queue.length);
+  $('#app').innerHTML=h;
+}
+function qpSlide(c,idx,total){
+  const gidx=S.companies.indexOf(c);
+  const ind=IND_BY_KEY[c.industry]||{color:'#8c8c8c',icon:'\u{1F9ED}'};
+  const rep=REP_BY_ID[c.owner]||REPS[0];
+  const tel=telHref(c.phone);const sIdx=STAGE_IDX[c.stage];
+  const pc=(idx+1)/total*100;
+  return `<div class="panel" style="padding:16px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim);font-weight:700"><span>${idx+1} of ${total}</span><span>${esc(c.geo.terr)} &middot; ${rep.emoji} ${esc(rep.name)}</span></div>
+    <div class="bar" style="margin-top:6px"><i style="width:${pc}%;background:var(--teal)"></i></div>
+    <div style="font-size:22px;font-weight:900;margin-top:13px;line-height:1.15">${esc(c.name)}</div>
+    <div class="u-meta" style="margin-top:7px"><span class="pill ind" style="background:${ind.color}">${ind.icon} ${esc(c.industry)}</span><span class="terrpill">${STAGES[sIdx]?STAGES[sIdx].label:''}</span></div>
+    <div style="margin-top:13px;font-size:14px">${c.contact?('\u{1F464} <b>'+esc(c.contact)+'</b>'+(c.title?' &middot; '+esc(c.title):'')):'<span style="color:var(--dim2)">No contact name yet &mdash; <span style="color:var(--teal);cursor:pointer" onclick="openEdit('+gidx+')">add one</span></span>'}</div>
+    ${c.email?`<div style="font-size:13px;color:var(--dim);margin-top:5px">✉️ ${esc(c.email)}</div>`:''}
+    ${c.phone?`<div class="hint" style="margin-top:8px">${esc(c.phone)}</div>`:''}
+    ${c.nextStep?`<div style="font-size:12px;color:var(--gold);margin-top:8px">⏭️ ${esc(c.nextStep)}</div>`:''}
+    <div style="margin-top:14px">${tel?`<a class="ib call" style="display:flex;font-size:16px;padding:15px" href="${tel}" onclick="trackCall(${gidx})">\u{1F4DE} Call ${esc(prettyTel(tel))}</a>`:`<div class="nocall" style="padding:12px">No number yet</div>`}</div>
+    <div class="uacts2" style="margin-top:8px">
+      <button class="ib mail" onclick="openEmail(${gidx})">✉️ Email</button>
+      <button class="ib edit" onclick="openEdit(${gidx})">✎ Edit</button>
+      <button class="ib" style="color:var(--purple)" onclick="claudeEmail(${gidx})">✨ Claude</button>
+    </div>
+    <div class="steps" style="margin-top:10px">${STAGES.map((s,i)=>`<div class="step ${i<=sIdx?'done':''}" style="${i<=sIdx?'background:'+s.color+';border-color:transparent':''}" onclick="setStageIdx(${gidx},'${s.key}')" title="${s.label}">${s.short}</div>`).join('')}</div>
+    <div class="u-actions" style="margin-top:12px">
+      <button class="btn" onclick="qpPrev()">&larr; Prev</button>
+      <button class="btn rej sm" onclick="reject(${gidx})">Pass</button>
+      <button class="btn adv" onclick="qpNext()">Next &rarr;</button>
+    </div>
+  </div>`;
 }
 function viewHitList(){
   const me=REP_BY_ID[S.me]||REPS[0];
@@ -508,22 +562,22 @@ function renderConsole(){
       <div class="nm">${esc(me.name)} <span style="font-size:10px;color:var(--dim2);font-weight:600">${esc(me.role)}</span></div>
       <div class="rl">Lv ${li.level} &middot; ${pxp.toLocaleString()} XP &middot; ${esc(me.market)}</div>
       <div class="xpwrap"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${me.color},#fff8)"></i></div>
-        <div class="xp-lab"><span>Lv ${li.level}</span><span>${li.into} / ${li.need} to Lv ${li.level+1}</span></div></div>
+        <div class="xp-lab"><span>Lv ${li.level}</span><span>${xpRight(li)}</span></div></div>
     </div>
     <div class="swap">&#9776;</div>`;
   const dpct=total.contacted/GLOBAL_POOL*100;
   $('#gpool').textContent=GLOBAL_POOL.toLocaleString();
   $('#gpct').textContent=fmtPct(dpct);
-  const ts=score(total);const {r}=rankFor(ts);
-  $('#chips').innerHTML=`<span class="chip">\u{1F396}️ Team <b>${r.n}</b></span>
+  const tl=levelInfo(score(total));
+  $('#chips').innerHTML=`<span class="chip">\u{1F396}️ Team <b>Lv ${tl.level}</b></span>
     <span class="chip">\u{1F4DE} <b>${total.contacted}</b> contacted</span>
     <span class="chip">\u{1F3C6} <b>${total.won}</b> won</span>
-    <span class="chip">\u{1F6A9} <b>${total.rejected}</b> resisted</span>`;
+    <span class="chip">\u{1F6AB} <b>${total.rejected}</b> no</span>`;
   const cc=$('#cloudChip'); cc.textContent=S.cloud?'cloud synced':'local mode'; cc.classList.toggle('on',S.cloud);
   setTimeout(()=>{$('#gfill').style.width=Math.max(dpct,dpct>0?1.5:0)+'%';},60);
 }
 function renderNav(){
-  const tabs=[['command','HQ'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
+  const tabs=[['command','HQ'],['quickplay','Quick Play'],['hitlist','Hit List'],['map','War Map'],['pipeline','Pipeline'],['sectors','Sectors']];
   $('#nav').innerHTML=tabs.map(t=>`<button class="${S.view===t[0]||(t[0]==='map'&&S.view==='territory')?'on':''}" onclick="go('${t[0]}')">${t[1]}</button>`).join('');
 }
 function go(v){S.view=v;if(v!=='territory')S.terr=null;window.scrollTo(0,0);render();}
@@ -547,7 +601,7 @@ function viewCommand(){
   h+=`<div style="font-size:11px;color:var(--dim2);margin-top:8px">Complete quests to earn training XP for <b style="color:var(--teal)">${esc((REP_BY_ID[S.me]||REPS[0]).name)}</b> and keep your streak alive.</div></div>`;
 
   /* SQUAD */
-  h+=`<h2 class="sec"><span class="dot"></span>Your Squad &mdash; tap a rep for their character</h2><div class="grid" style="gap:10px">`;
+  h+=`<h2 class="sec"><span class="dot"></span>Your Team &mdash; tap a rep for their profile</h2><div class="grid" style="gap:10px">`;
   const roster=REPS.map(rep=>({rep,xp:repXP(rep.id)})).sort((a,b)=>b.xp-a.xp);
   const medals=['\u{1F947}','\u{1F948}','\u{1F949}'];
   roster.forEach((row,ri)=>{const rep=row.rep;
@@ -562,7 +616,7 @@ function viewCommand(){
           <div class="xp-lab"><span>Lv ${li.level} &middot; ${xp.toLocaleString()} XP</span><span>${m.contacted} contacted &middot; ${m.won} won</span></div></div>
         <div class="rbtns">
           <button class="mini-btn ${isMe?'on':''}" onclick="event.stopPropagation();setMeId('${rep.id}')">${isMe?'You':'Play as'}</button>
-          <button class="mini-btn" onclick="event.stopPropagation();openRep('${rep.id}')">Character</button>
+          <button class="mini-btn" onclick="event.stopPropagation();openRep('${rep.id}')">Profile</button>
           <button class="mini-btn" onclick="event.stopPropagation();viewBook('${rep.id}')">Book</button>
         </div>
       </div>
@@ -573,7 +627,7 @@ function viewCommand(){
   /* EMPIRE STATUS */
   h+=`<h2 class="sec"><span class="dot"></span>Empire Status</h2>`;
   h+=`<div class="grid g4">
-    ${statTile(M.known,'Units','all accounts',null,"go('pipeline')")}
+    ${statTile(M.known,'Accounts','in your book',null,"go('pipeline')")}
     ${statTile(M.contacted,'Contacted','reached &amp; beyond','var(--green)',"stageBoard('contacted')")}
     ${statTile(M.convo+M.won,'Engaged','in conversation +','var(--teal)',"stageBoard('convo')")}
     ${statTile(M.won,'Won','conquered','var(--gold)',"stageBoard('won')")}
@@ -676,7 +730,7 @@ function viewTerritory(){
   h+=`<h2 class="sec" style="margin-top:8px"><span class="dot"></span>Territory Briefing</h2>
   <div class="panel"><div class="terrhead"><div style="font-size:30px">${flag}</div>
     <div style="flex:1;min-width:180px"><div class="big">${esc(name)}</div>
-      <div style="font-size:12px;color:var(--dim);margin-top:2px">${M.known} units &middot; ${M.contacted} contacted &middot; ${M.won} won &middot; ${M.rejected} resisted</div>
+      <div style="font-size:12px;color:var(--dim);margin-top:2px">${M.known} accounts &middot; ${M.contacted} contacted &middot; ${M.won} won &middot; ${M.rejected} passed</div>
       <div class="bar" style="margin-top:10px"><i style="width:${Math.max(pc,M.contacted?2:0).toFixed(1)}%;background:var(--green)"></i></div>
       <div style="font-size:11px;color:var(--dim2);margin-top:5px">${fmtPct(pc)} control &middot; ~${target.toLocaleString()} est. targets &middot; <span style="color:var(--dim)">${undiscovered.toLocaleString()} undiscovered</span></div>
     </div></div></div>`;
@@ -696,7 +750,7 @@ function viewTerritory(){
   h+=`</div>`;
 
   const tabs=[['all','All']].concat(STAGES.map(s=>[s.key,s.short])).concat([['rejected','Rejected']]);
-  h+=`<h2 class="sec" id="unitsHead"><span class="dot"></span>Units in ${esc(name)}</h2>`;
+  h+=`<h2 class="sec" id="unitsHead"><span class="dot"></span>Accounts in ${esc(name)}</h2>`;
   h+=`<div class="subtabs">`+tabs.map(t=>`<button class="${S.terrTab===t[0]?'on':''}" onclick="setTerrTab('${t[0]}')">${t[1]}</button>`).join('')+`</div>`;
   h+=`<button class="btn adv" style="margin:0 0 12px;max-width:280px" onclick="addHere()">➕ Add account in ${esc(name)}${S.terrSector?' &middot; '+esc(S.terrSector):''}</button>`;
   let ulist=list.slice();
@@ -723,7 +777,7 @@ function viewPipeline(){
   if(f.terr)list=list.filter(c=>c.geo.terr===f.terr);
   if(f.q){const q=f.q.toLowerCase();list=list.filter(c=>(c.name||'').toLowerCase().includes(q)||(c.location||'').toLowerCase().includes(q)||(c.industry||'').toLowerCase().includes(q));}
   list.sort((a,b)=>STAGE_IDX[b.stage]-STAGE_IDX[a.stage]||(a.name||'').localeCompare(b.name||''));
-  let h=`<h2 class="sec"><span class="dot"></span>Pipeline &mdash; ${list.length} units</h2>`;
+  let h=`<h2 class="sec"><span class="dot"></span>Pipeline &mdash; ${list.length} accounts</h2>`;
   h+=`<div class="filters">
     <input id="fq" placeholder="Search company, city, sector..." value="${esc(f.q)}" oninput="S.filter.q=this.value;debounceP()">
     <select onchange="S.filter.owner=this.value||null;render()"><option value="">All reps</option>${REPS.map(r=>`<option value="${r.id}" ${f.owner===r.id?'selected':''}>${esc(r.name)}</option>`).join('')}</select>
@@ -850,7 +904,7 @@ function openOwner(idx){
 function openAdd(prefill){
   prefill=prefill||{};
   const m=$('#modal');
-  m.innerHTML=`<h3>Deploy a Unit</h3><div style="font-size:12px;color:var(--dim)">Add a company to the board.</div>
+  m.innerHTML=`<h3>Add Account</h3><div style="font-size:12px;color:var(--dim)">Add a company to your book.</div>
   <div class="field"><label>Company name *</label><input id="a_name" placeholder="Acme Foods"></div>
   <div class="field"><label>Owner (rep)</label><select id="a_owner">${REPS.map(r=>`<option value="${r.id}" ${r.id===(prefill.owner||S.me)?'selected':''}>${esc(r.name)}</option>`).join('')}</select></div>
   <div class="field"><label>Sector</label><select id="a_ind">${INDUSTRIES.map(i=>`<option ${i.key===prefill.industry?'selected':''}>${i.key}</option>`).join('')}</select></div>
@@ -861,7 +915,7 @@ function openAdd(prefill){
   <div class="field"><label>Phone (tap-to-call)</label><input id="a_phone" placeholder="(843) 957-6111"></div>
   <div class="field"><label>Stage</label><select id="a_stage">${STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('')}</select></div>
   <div class="field"><label>Notes</label><textarea id="a_notes" rows="2" placeholder="(optional)"></textarea></div>
-  <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitAdd()">Deploy</button></div>`;
+  <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitAdd()">Add Account</button></div>`;
   $('#modalBg').classList.add('show');setTimeout(()=>$('#a_name').focus(),50);
 }
 function addHere(){const t=S.terr;if(!t)return;const loc=t.kind==='state'?(STATE_BY_AB[t.key]?STATE_BY_AB[t.key].name:t.key):'';openAdd({location:loc,industry:S.terrSector||undefined});}
@@ -871,7 +925,7 @@ async function submitAdd(){
   const o={name,owner:$('#a_owner').value,industry:$('#a_ind').value,location:$('#a_loc').value.trim(),
     contact:$('#a_contact').value.trim(),title:$('#a_title').value.trim(),email:$('#a_email').value.trim(),
     status:statusForStage($('#a_stage').value),phone:$('#a_phone').value.trim(),notes:$('#a_notes').value.trim()};
-  closeModal();await addCompany(o);logAct('Added '+name);render();toast('✅ '+name+' deployed to '+REP_BY_ID[o.owner].name);
+  closeModal();await addCompany(o);logAct('Added '+name);render();toast('✅ '+name+' added for '+REP_BY_ID[o.owner].name);
 }
 async function signIn(){/* reserved for cloud */}
 
@@ -977,8 +1031,8 @@ async function submitEdit(idx){
 }
 
 /* ---------- character sheet ---------- */
-const TITLES=['Rookie Rep','Prospector','Dialer','Closer','Account Exec','Regional Lead','Sales Captain','Rainmaker','Kingpin','Legend'];
-function titleForLevel(l){return TITLES[Math.min(l-1,TITLES.length-1)];}
+const TITLES=['Associate','Sales Rep','Senior Rep','Account Executive','Senior AE','Territory Lead','Regional Manager','Director of Sales','VP of Sales','Managing Partner'];
+function titleForLevel(l){return TITLES[Math.min(9,Math.floor((l-1)/10))];}
 function openRep(id){S.repId=id;S.view='rep';window.scrollTo(0,0);render();}
 function viewRep(){
   const id=S.repId;const rep=REP_BY_ID[id];if(!rep){go('command');return;}
@@ -995,13 +1049,13 @@ function viewRep(){
     {i:'\u{1F30D}',t:'Globalist',d:'Own 2+ regions',ok:new Set(list.map(c=>c.geo.region)).size>=2}
   ];
   let h=`<div class="crumb" onclick="go('command')">&larr; HQ</div>`;
-  h+=`<h2 class="sec" style="margin-top:8px"><span class="dot"></span>Character Sheet</h2>
+  h+=`<h2 class="sec" style="margin-top:8px"><span class="dot"></span>Rep Profile</h2>
   <div class="panel"><div class="charhead">${avatarHTML(rep,li.level,60)}
     <div style="flex:1;min-width:160px"><div class="big">${esc(rep.name)}</div>
       <div style="font-size:12px;color:${rep.color};font-weight:800">${titleForLevel(li.level)} &middot; Lv ${li.level}</div>
       <div style="font-size:11px;color:var(--dim);margin-top:2px">${esc(rep.role)} &middot; ${esc(rep.market)}</div></div></div>
     <div class="xpwrap" style="margin-top:12px"><div class="xpbar"><i style="width:${(li.pct*100).toFixed(1)}%;background:linear-gradient(90deg,${rep.color},#fff8)"></i></div>
-      <div class="xp-lab"><span>${xp.toLocaleString()} XP total</span><span>${li.into} / ${li.need} to Lv ${li.level+1}</span></div></div>
+      <div class="xp-lab"><span>${xp.toLocaleString()} XP total</span><span>${xpRight(li)}</span></div></div>
     <div style="font-size:10px;color:var(--dim2);margin-top:6px">${acctXP.toLocaleString()} from accounts &middot; ${(st.xp||0).toLocaleString()} from training</div>
     <div class="uacts2" style="margin-top:12px">
       <button class="ib" style="color:${rep.color}" onclick="openPitch()">\u{1F3AF} Pitch Meter</button>
@@ -1091,8 +1145,9 @@ function openHelp(){
   const m=$('#modal');
   m.innerHTML=`<h3>How the game works</h3>
   <div style="font-size:13px;color:var(--tx);line-height:1.6">
-    <p style="margin:8px 0"><b>You conquer territory by contacting companies.</b> Each account is a unit you push through stages: Scouted &rarr; Ready &rarr; Contacted &rarr; Engaged &rarr; Won. Reject turns it red.</p>
-    <p style="margin:8px 0"><b>Work the Hit List</b> for your prioritized calls and emails each day. Tap <b style="color:var(--teal)">Call</b> to dial, <b style="color:#8fc0ff">Email</b> for a ready template (or Ask Claude), and <b>Edit</b> to save new contact info.</p>
+    <p style="margin:8px 0"><b>You cover territory by contacting companies.</b> Each account moves through stages: Scouted &rarr; Ready &rarr; Contacted &rarr; Engaged &rarr; Won. Pass turns it red.</p>
+    <p style="margin:8px 0"><b>Quick Play</b> is your power-dial mode: pick a sector and it feeds you one account at a time with the number and contact, ready to call. Hit Next for the next one.</p>
+    <p style="margin:8px 0"><b>The Hit List</b> is your prioritized worklist. Tap <b style="color:var(--teal)">Call</b> to dial, <b style="color:#8fc0ff">Email</b> for a ready template (or Ask Claude), and <b>Edit</b> to save new contact info.</p>
     <p style="margin:8px 0"><b>You earn XP and level up.</b> +20 make contact, +45 a conversation, +150 a win. Finish <b>Daily Ops</b> quests and play the <b>Pitch Meter</b> for bonus training XP. Keep your streak alive.</p>
     <p style="margin:8px 0"><b>The War Map</b> is the USA by state. Tap a state to see the industry sectors inside and how many targets are still undiscovered. Canada, Mexico and the EU are your frontier.</p>
   </div>
