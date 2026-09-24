@@ -1489,13 +1489,19 @@ function openCloud(){
     <div class="field"><label>Email</label><input id="c_email" type="email" placeholder="you@seaquest.app"></div>
     <div class="field"><label>Password</label><input id="c_pw" type="password" placeholder="password"></div>
     <div id="c_err" style="color:var(--red);font-size:12px;margin-top:8px;display:none"></div>
-    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="doSignIn()">Sign in &amp; sync</button></div>
-    <div style="font-size:11px;color:var(--dim2);margin-top:12px">No login yet? Create one in Supabase &rarr; Authentication &rarr; Users &rarr; Add user (Auto Confirm), then sign in.</div>`;}
+    <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn" onclick="doSignUp()">Create account</button><button class="btn adv" onclick="doSignIn()">Sign in &amp; sync</button></div>
+    <div style="font-size:11px;color:var(--dim2);margin-top:12px">New here? Enter an email and password, tap Create account. If email confirmation is on, confirm via the email then Sign in.</div>`;}
   $('#modalBg').classList.add('show');
 }
 async function doSignIn(){if(!sb){toast('Cloud unavailable');return;}const email=$('#c_email').value.trim(),pw=$('#c_pw').value,err=$('#c_err');err.style.display='none';
   try{const {data,error}=await sb.auth.signInWithPassword({email,password:pw});if(error){err.textContent=error.message;err.style.display='block';return;}
     S.cloud=true;S.session=data.session;closeModal();await reload();render();toast('☁️ Cloud synced');}catch(e){err.textContent='Sign-in failed';err.style.display='block';}}
+async function doSignUp(){if(!sb){toast('Cloud unavailable');return;}const email=$('#c_email').value.trim(),pw=$('#c_pw').value,err=$('#c_err');err.style.display='none';err.style.color='var(--red)';
+  if(!email||pw.length<6){err.textContent='Enter an email and a password of at least 6 characters.';err.style.display='block';return;}
+  try{const {data,error}=await sb.auth.signUp({email,password:pw});if(error){err.textContent=error.message;err.style.display='block';return;}
+    if(data&&data.session){S.cloud=true;S.session=data.session;closeModal();await reload();render();toast('✅ Account created - cloud synced');}
+    else{err.style.color='var(--teal)';err.textContent='Account created. If asked, confirm via the email we sent, then tap Sign in.';err.style.display='block';}
+  }catch(e){err.textContent='Sign-up failed';err.style.display='block';}}
 async function doSignOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;S.session=null;closeModal();await reload();render();toast('Signed out - local mode');}
 
 /* ---------- clipboard / claude ---------- */
