@@ -1838,7 +1838,7 @@ async function authSignIn(){const email=($('#au_email').value||'').trim(),pw=$('
 async function authSignUp(){const email=($('#au_email').value||'').trim(),pw=$('#au_pw').value,err=$('#au_err');err.style.display='none';
   if(!email||pw.length<6){err.style.color='var(--red)';err.textContent='Enter an email and a password of at least 6 characters.';err.style.display='block';return;}
   try{const {data,error}=await sb.auth.signUp({email,password:pw});if(error){err.style.color='var(--red)';err.textContent=error.message;err.style.display='block';return;}
-    if(data&&data.session){S.session=data.session;S.cloud=true;await fetchProfile();showPending();}
+    if(data&&data.session){S.session=data.session;S.cloud=true;await afterLogin();}
     else{err.style.color='var(--teal)';err.textContent='Account created. Confirm via the email we sent, then sign in. An admin still needs to approve you.';err.style.display='block';}}
   catch(e){err.style.color='var(--red)';err.textContent='Sign-up failed';err.style.display='block';}}
 async function signOutAuth(){try{await sb.auth.signOut();}catch(e){}S.session=null;S.cloud=false;S.profile=null;showAuth();}
