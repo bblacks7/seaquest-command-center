@@ -272,6 +272,16 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 
 <main class="wrap"><div id="app"></div></main>
 
+<div id="gate" style="position:fixed;inset:0;z-index:200;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:340px;width:100%;text-align:center">
+    <div style="width:56px;height:56px;border-radius:16px;margin:0 auto 16px;background:linear-gradient(135deg,var(--teal),var(--blue));display:grid;place-items:center;color:#04121a;font-weight:900;font-size:26px;box-shadow:0 0 22px rgba(0,224,164,.4)">S</div>
+    <div style="font-weight:900;font-size:20px">SeaQuest Command Center</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:6px">Team access only. Enter the passphrase to continue.</div>
+    <input id="gate_pw" type="password" placeholder="Passphrase" autocomplete="off" style="width:100%;margin-top:16px;background:var(--bg2);border:1px solid var(--line);color:var(--tx);padding:13px;border-radius:12px;font-size:15px;text-align:center" onkeydown="if(event.key==='Enter')gateTry()">
+    <div id="gate_err" style="color:var(--red);font-size:12px;margin-top:8px;display:none">That passphrase didn't match. Try again.</div>
+    <button class="btn adv" style="width:100%;margin-top:14px;padding:12px" onclick="gateTry()">Enter</button>
+  </div>
+</div>
 <button class="fab" id="fab" title="Add company">+</button>
 <div id="toast"></div>
 <div id="tour"></div>
@@ -1769,7 +1779,12 @@ $('#fab').onclick=openAdd;
 $('#menuBtn').onclick=openMenu;
 $('#cloudChip').onclick=openCloud;
 $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
-(async function boot(){
+const GATE_HASH="5826fd04aa183c5d73d6949ebc62542da823d3a0edfec29a5d68238a40732471";
+async function sha256hex(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
+function gateOk(){try{return !GATE_HASH||localStorage.getItem('sq_gate')===GATE_HASH;}catch(e){return !GATE_HASH;}}
+async function gateTry(){const v=($('#gate_pw')||{}).value||'';let hx='';try{hx=await sha256hex(v);}catch(e){}if(hx===GATE_HASH){try{localStorage.setItem('sq_gate',GATE_HASH);}catch(e){}const g=$('#gate');if(g)g.style.display='none';startApp();}else{const e2=$('#gate_err');if(e2)e2.style.display='block';}}
+function showGate(){const g=$('#gate');if(g){g.style.display='flex';setTimeout(()=>{const p=$('#gate_pw');if(p)p.focus();},60);}}
+async function startApp(){
   loadRepNames(); S.me=getMe();
   await initCloud();
   await reload();
@@ -1782,7 +1797,8 @@ $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
     if(changed)saveSched(list);
     if(!$('#modalBg').classList.contains('show')&&['map','quickplay','hitlist','command'].indexOf(S.view)>=0)render();
   },60000);
-})();
+}
+if(gateOk())startApp();else showGate();
 </script>
 </body>
 </html>
