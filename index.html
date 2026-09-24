@@ -431,6 +431,7 @@ const QUESTS=[
   {key:'calls',   label:'Dial 5 prospects',   goal:5, xp:40, icon:'\u{1F4DE}'},
   {key:'emails',  label:'Send 3 intro emails', goal:3, xp:35, icon:'✉️'},
   {key:'added',   label:'Research 8 new accounts', goal:8, xp:50, icon:'\u{1F50E}'},
+  {key:'practices',label:'Practice 1 call',    goal:1, xp:30, icon:'\u{1F3A4}'},
   {key:'advances',label:'Advance 3 accounts',  goal:3, xp:45, icon:'⚔️'},
   {key:'wins',    label:'Close 1 deal',        goal:1, xp:120,icon:'\u{1F3C6}'}
 ];
@@ -745,7 +746,17 @@ function startPractice(){
   const prompt="Let's role-play a sales call so I can practice out loud. You play a "+diff+" prospect "+sec+". I'm a rep for SeaQuest Global, a veteran-owned company that supplies custom paper packaging (bags, boxes, sacks, printed) from our own factories. Minimum orders are around 20,000 units, and I never quote prices myself; quotes come from our team.\n\n"
    +"Scenario: "+scen.desc+"\n\n"
    +"How to play it: stay fully in character as the prospect, react like a real busy buyer, raise realistic objections, and only warm up if I earn it. Do not coach me mid-call. When I type END, drop character and give quick coaching: 2 things I did well and 2 to improve, judged on solid B2B selling and these SeaQuest rules - never quote a price, position us as the US sales arm for our own factories (never 'broker' or 'factory-direct'), dig for specs (size, gsm, quantity, artwork), handle objections with feel-felt-found, and always set a next step with a date. Keep it real. Begin now by speaking first, in character.";
-  askClaude(prompt);logAct('Practiced: '+scen.label);
+  askClaude(prompt);
+  const xp=practiceReward();bumpStat(S.me,'practices',1);logAct('Practiced: '+scen.label+(xp?' (+'+xp+' XP)':''));
+  if(xp>0)addTrainingXP(S.me,xp);
+  setTimeout(()=>toast(xp>0?('\u{1F3A4} Practice started  +'+xp+' XP'):'\u{1F3A4} Practice started (daily XP maxed)'),300);
+}
+function practiceReward(){
+  let d;try{d=JSON.parse(localStorage.getItem('sq_practice')||'null');}catch(e){d=null;}
+  const t=todayStr();if(!d||d.date!==t)d={date:t,count:0};
+  let xp=0;if(d.count<6){xp=15;d.count++;}
+  try{localStorage.setItem('sq_practice',JSON.stringify(d));}catch(e){}
+  return xp;
 }
 function toggleResearch(k){S.researchOpen=S.researchOpen||{};S.researchOpen[k]=!S.researchOpen[k];render();}
 function viewResearch(){
@@ -1620,7 +1631,7 @@ function viewRep(){
   <div class="statgrid">
     ${stMini(list.length,'Accounts')}${stMini(m.contacted,'Contacted')}${stMini(m.convo+m.won,'Convos')}${stMini(m.won,'Wins')}
     ${stMini(m.rejected,'Rejects')}${stMini(st.calls,'Calls')}${stMini(st.emails,'Emails')}${stMini(st.added||0,'Added')}
-    ${stMini(st.games||0,'Pitches')}${stMini(money(repBooked),'Booked')}${stMini(repCourses,'Courses')}${stMini(repNiches,'Niches')}
+    ${stMini(st.games||0,'Pitches')}${stMini(st.practices||0,'Practice')}${stMini(money(repBooked),'Booked')}${stMini(repCourses,'Courses')}
   </div>`;
   const earned=badges.filter(b=>b.ok).length;
   h+=`<h2 class="sec"><span class="dot"></span>Achievements (${earned}/${badges.length})</h2><div class="badges">`
