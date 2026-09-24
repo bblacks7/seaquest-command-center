@@ -262,6 +262,94 @@ window.SEAQUEST_ACADEMY = [
     quiz:[
       { q:"Roughly where does our minimum order start?", a:["20,000 units","10 units","1 million units"], correct:0 },
       { q:"Where do prices come from?", a:["The rep","Brandon / quotes","The prospect"], correct:1 }
+    ] },
+
+  { id:"close-mindset", track:"Closing Masterclass", icon:"\u{1F3AF}", title:"1. The Closer's Mindset", xp:80, badge:{i:"\u{1F3AF}",t:"Closer Mentality"},
+    points:[
+      "Closing starts at hello. Every call and email either moves the deal forward or lets it stall.",
+      "Assume the sale. Speak as if working together is the natural next step, not a long shot.",
+      "Your job is to help them buy, not to pressure. Solve a real packaging problem for them.",
+      "Qualify hard and disqualify fast. Our sweet spot is real volume, around 20,000+ units.",
+      "Confidence comes from prep: know their brand, their current packaging, and one clear reason we fit.",
+      "A 'maybe' that drags is a 'no' in disguise. Always push for a clear next step with a date."
+    ],
+    quiz:[
+      { q:"Closing begins...", a:["only at the very end","at hello, on every touch","after the quote is sent"], correct:1 },
+      { q:"A deal that keeps stalling with no next step is...", a:["a strong lead","basically a no","already won"], correct:1 },
+      { q:"Our sweet spot is...", a:["any size order","real volume around 20,000+ units","one-off samples"], correct:1 }
+    ] },
+  { id:"close-discovery", track:"Closing Masterclass", icon:"\u{1F50E}", title:"2. Qualifying & Discovery", xp:80, badge:{i:"\u{1F50E}",t:"Deal Detective"},
+    points:[
+      "Confirm you're talking to the decision-maker, or the person who influences the buy.",
+      "Find the pain: what do they dislike about their current packaging or supplier?",
+      "Get the numbers early: sizes, monthly or annual volume, and how they reorder.",
+      "Understand timing: their next reorder or product launch is your window to win.",
+      "Look for the compelling reason to change: cost, quality, sustainability, lead time, or a launch.",
+      "No pain and no timeline usually means no deal yet. Note it and set a follow-up date."
+    ],
+    quiz:[
+      { q:"Before investing time, confirm they are...", a:["a decision-maker or influencer","a competitor","just browsing"], correct:0 },
+      { q:"Your best timing window is...", a:["never","their next reorder or launch","a random Tuesday"], correct:1 },
+      { q:"No pain and no timeline means...", a:["close immediately","likely not ready, set a follow-up","raise the price"], correct:1 }
+    ] },
+  { id:"close-specs", track:"Closing Masterclass", icon:"\u{1F4D0}", title:"3. Getting the Specs", xp:90, badge:{i:"\u{1F4D0}",t:"Spec Master"},
+    points:[
+      "For us, the real close is getting complete specs so Brandon can quote sharp and fast.",
+      "Collect the item (bag, box, sack), dimensions, paper weight (gsm), and material (kraft or white, FSC if needed).",
+      "Collect quantity, print (colors and artwork), handles or finish, ship-to city, and the deadline.",
+      "Ask for their current artwork or a sample of what they use today.",
+      "Our factories print in-house, including regulated labels and barcodes, so complex art is not a blocker.",
+      "Reps do not quote prices. Package the specs and send them to Brandon or quotes for pricing.",
+      "A complete spec sheet is a hot lead. Missing specs stall the quote."
+    ],
+    quiz:[
+      { q:"For SeaQuest, the real close is...", a:["quoting a price yourself","getting complete specs to Brandon","sending a brochure"], correct:1 },
+      { q:"Which is NOT a spec you need?", a:["dimensions and gsm","quantity and artwork","their CEO's birthday"], correct:2 },
+      { q:"Who prepares the price?", a:["the rep","Brandon / quotes","the factory"], correct:1 }
+    ] },
+  { id:"close-objections", track:"Closing Masterclass", icon:"\u{1F6E1}️", title:"4. Handling Objections", xp:90, badge:{i:"\u{1F6E1}️",t:"Objection Slayer"},
+    points:[
+      "Objections are buying signals. They mean the prospect is seriously considering it.",
+      "Price: never quote on the spot. Say we'll put together a sharp quote, and our own factories mean real value.",
+      "'We already have a supplier': ask for a side-by-side quote, it costs them nothing to compare.",
+      "'Your minimum is too high': bundle SKUs or set up an annual program to reach the volume.",
+      "'You're overseas': we run our own factories, print in-house including compliance labels, and source smartly around duties.",
+      "'Just send me info': that's a stall. Pin a specific next step and a date instead.",
+      "Use feel, felt, found: I understand how you feel, others felt the same, here's what they found."
+    ],
+    quiz:[
+      { q:"An objection usually means...", a:["they hate you","they're considering it","the call is over"], correct:1 },
+      { q:"When they push on price, you...", a:["quote a number fast","offer a sharp quote and lead with value","hang up"], correct:1 },
+      { q:"'Just send me info' is best handled by...", a:["emailing a PDF and waiting","pinning a specific next step and date","giving up"], correct:1 }
+    ] },
+  { id:"close-ask", track:"Closing Masterclass", icon:"\u{1F91D}", title:"5. Trial Closes & Asking", xp:90, badge:{i:"\u{1F91D}",t:"The Ask"},
+    points:[
+      "Trial close to test the temperature: 'If the quote lands where you'd like, any reason we couldn't do a first run?'",
+      "Use assumptive language: talk about the first order, artwork approval, and timing as if it's happening.",
+      "The quote request IS your ask: get their commitment to review it and decide by a date.",
+      "Always leave with a next step tied to a date, never 'I'll follow up sometime'.",
+      "Silence is your friend. After you ask, stop talking and let them answer.",
+      "Summarize the agreement out loud so you both know exactly what happens next."
+    ],
+    quiz:[
+      { q:"A trial close...", a:["ends the relationship","tests how ready they are to buy","quotes a price"], correct:1 },
+      { q:"Right after you ask for the business, you should...", a:["keep talking","stay silent and let them answer","change the subject"], correct:1 },
+      { q:"Every call should end with...", a:["a vague maybe","a next step tied to a date","a price"], correct:1 }
+    ] },
+  { id:"close-handoff", track:"Closing Masterclass", icon:"\u{1F3C6}", title:"6. Quote Handoff & Sealing It", xp:100, badge:{i:"\u{1F3C6}",t:"Deal Closer"},
+    points:[
+      "Reps don't price. Send the complete specs to Brandon or quotes and set expectations on turnaround.",
+      "Follow up within 1 to 2 days of any inbound reply or quote. Speed wins deals. Use the Needs Attention list.",
+      "Create honest urgency: lead times, one-time plate and setup costs, and quote validity windows.",
+      "Confirm the details on the quote, then ask for the PO and final artwork approval.",
+      "Once you have a yes: lock the PO, confirm artwork, and hand off to production.",
+      "Mark it Won in the app and enter the order value. That's how your P&L and forecast grow.",
+      "Log every step. A clean record makes the next reorder easy."
+    ],
+    quiz:[
+      { q:"How fast should you follow up on an inbound reply?", a:["within 1 to 2 days","within a month","whenever you get to it"], correct:0 },
+      { q:"To seal it, confirm the quote and then get...", a:["nothing","the PO and artwork approval","a brand new lead"], correct:1 },
+      { q:"After you win, in the app you...", a:["do nothing","mark Won and enter the order value","delete the account"], correct:1 }
     ] }
 ];
 

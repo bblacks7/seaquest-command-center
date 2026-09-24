@@ -633,15 +633,18 @@ function viewAcademy(){
   <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Learn the SeaQuest playbook. Pass a module's check to earn XP and a badge for <b style="color:var(--teal)">${esc(me.name)}</b>.</div>
   <div class="panel"><div class="barlab"><span>Training complete</span><b>${doneList.length} / ${ACADEMY.length}</b></div><div class="bar"><i style="width:${(doneList.length/Math.max(1,ACADEMY.length)*100).toFixed(1)}%;background:var(--gold)"></i></div>
     <div style="font-size:10px;color:var(--dim2);margin-top:5px">${totalXP} XP earned from training so far</div></div>`;
-  h+=`<div class="grid" style="gap:10px;margin-top:12px">`;
-  ACADEMY.forEach(m=>{const d=trainDone(me.id,m.id);
-    h+=`<div class="rep" style="cursor:pointer" onclick="openModule('${m.id}')">
-      <div class="ava" style="width:44px;height:44px;border-color:${d?'var(--gold)':'var(--line)'};font-size:22px">${m.icon}</div>
-      <div class="info"><div class="rn">${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</div>
-        <div class="rm">${m.points.length} key points &middot; ${m.quiz.length}-question check &middot; +${m.xp} XP</div></div>
-      <button class="mini-btn ${d?'':'on'}" onclick="event.stopPropagation();openModule('${m.id}')">${d?'Review':'Start'}</button>
-    </div>`;});
-  h+=`</div>`;
+  const tracks=[];const byTrack={};
+  ACADEMY.forEach(m=>{const t=m.track||'Fundamentals';if(!byTrack[t]){byTrack[t]=[];tracks.push(t);}byTrack[t].push(m);});
+  tracks.forEach(t=>{const mods=byTrack[t];const td=mods.filter(m=>trainDone(me.id,m.id)).length;
+    h+=`<h2 class="sec"><span class="dot"></span>${esc(t)} <span style="font-weight:700;color:var(--dim2);font-size:11px;text-transform:none;letter-spacing:0">${td}/${mods.length}</span></h2><div class="grid" style="gap:10px">`;
+    mods.forEach(m=>{const d=trainDone(me.id,m.id);
+      h+=`<div class="rep" style="cursor:pointer" onclick="openModule('${m.id}')">
+        <div class="ava" style="width:44px;height:44px;border-color:${d?'var(--gold)':'var(--line)'};font-size:22px">${m.icon}</div>
+        <div class="info"><div class="rn">${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</div>
+          <div class="rm">${m.points.length} key points &middot; ${m.quiz.length}-question check &middot; +${m.xp} XP</div></div>
+        <button class="mini-btn ${d?'':'on'}" onclick="event.stopPropagation();openModule('${m.id}')">${d?'Review':'Start'}</button>
+      </div>`;});
+    h+=`</div>`;});
   h+=`<h2 class="sec"><span class="dot"></span>Training Badges (${doneList.length}/${ACADEMY.length})</h2><div class="badges">`
     +ACADEMY.map(m=>{const d=trainDone(me.id,m.id);return `<div class="badge2 ${d?'':'lock'}"><div class="bi">${m.badge.i}</div><div><div class="bt">${esc(m.badge.t)}</div><div class="bd">${esc(m.title)}</div></div></div>`;}).join('')+`</div>`;
   $('#app').innerHTML=h;
