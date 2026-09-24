@@ -290,6 +290,17 @@ const FIN=window.SEAQUEST_FINANCE||{markup:0.22,overhead:8000,default:15000,avgD
 function dealValueOf(c){return (c.dealValue&&c.dealValue>0)?c.dealValue:((FIN.avgDeal&&FIN.avgDeal[c.industry])||FIN.default||15000);}
 function pnl(){const won=S.companies.filter(c=>!c.rejected&&c.stage==='won');const revenue=won.reduce((a,c)=>a+dealValueOf(c),0);const gross=Math.round(revenue*(FIN.markup||0.22));const net=gross-(FIN.overhead||0);return{won:won.length,revenue,gross,overhead:FIN.overhead||0,net};}
 function money(n){return (n<0?'-$':'$')+Math.abs(Math.round(n)).toLocaleString();}
+const RC=window.SEAQUEST_RINGCENTRAL||{dialTemplate:'tel:{num}',label:'RingCentral'};
+const STAGE_PROB=window.SEAQUEST_STAGE_PROB||{prospect:0.05,researched:0.12,reached:0.30,convo:0.60,won:1.0};
+function todayStr(){return new Date().toISOString().slice(0,10);}
+function daysBetween(a,b){return Math.round((new Date(a+'T00:00:00')-new Date(b+'T00:00:00'))/86400000);}
+function dueStatus(c){ if(c.rejected||c.stage==='won')return null; if(!c.dueDate)return null; const d=daysBetween(c.dueDate,todayStr()); if(d<0)return{k:'overdue',d}; if(d===0)return{k:'today',d}; if(d<=2)return{k:'soon',d}; return{k:'later',d}; }
+function forecast(){
+  let weighted=0,expected=0,won=0;
+  S.companies.forEach(c=>{ if(c.rejected)return; const p=STAGE_PROB[c.stage]||0; if(c.stage==='won'){won+=dealValueOf(c);expected+=1;} else {weighted+=dealValueOf(c)*p;expected+=p;} });
+  const pipeline=Math.round(weighted); const fProfit=Math.round((won+weighted)*(FIN.markup||0.22));
+  return {pipeline,expected:Math.round(expected*10)/10,fProfit,wonRev:won};
+}
 const STAGE_IDX={}; STAGES.forEach((s,i)=>STAGE_IDX[s.key]=i);
 const REP_BY_ID={}; REPS.forEach(r=>REP_BY_ID[r.id]={...r});
 const SUM_POP=STATES.reduce((a,s)=>a+s.pop,0);
@@ -454,11 +465,13 @@ function buildModel(list){
     const nextStep=pick(e.nextStep,raw.nextStep);
     const niche=pick(e.niche,raw.niche);
     const dealValue=(e.dealValue!=null?e.dealValue:raw.dealValue)||0;
+    const dueDate=pick(e.dueDate,raw.dueDate);
+    const inquiry=(e.inquiry!=null?e.inquiry:raw.inquiry)||false;
     const email=pick(e.email,raw.email)||extractEmail(notes,phone);
     const geo=parseGeo(location);
     const rej=(typeof raw._rejected==='boolean')?raw._rejected:isRejected(raw.status);
     const owner=owners[raw.name]||raw.owner||defaultOwner(geo.region);
-    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,niche,dealValue,
+    return {id:raw.id,name:raw.name,industry,location,status:raw.status,phone,email,contact,title,notes,nextStep,niche,dealValue,dueDate,inquiry,
       geo,rejected:rej,stage:deriveStage(raw.status),owner};
   });
 }
@@ -551,6 +564,7 @@ function render(){ renderConsole(); renderNav();
   else if(v==='research')viewResearch();
   else if(v==='academy')viewAcademy();
   else if(v==='links')viewLinks();
+  else if(v==='manager')viewManager();
   else if(v==='rep')viewRep();
 }
 function openMenu(){
@@ -561,13 +575,40 @@ function openMenu(){
    ${grp('Work',[{icon:'\u{1F3E0}',label:'HQ',onclick:"menuGo('command')"},{icon:'⚡',label:'Quick Play',onclick:"menuGo('quickplay')"},{icon:'\u{1F3AF}',label:'Hit List',onclick:"menuGo('hitlist')"}])}
    ${grp('Grow',[{icon:'✨',label:'Research',onclick:"menuGo('research')"},{icon:'\u{1F393}',label:'Academy',onclick:"menuGo('academy')"}])}
    ${grp('Map & Data',[{icon:'\u{1F5FA}️',label:'War Map',onclick:"menuGo('map')"},{icon:'\u{1F4CB}',label:'Pipeline',onclick:"menuGo('pipeline')"},{icon:'\u{1F4CA}',label:'Sectors',onclick:"menuGo('sectors')"}])}
-   ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}])}
+   ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F4C8}',label:'Manager dashboard',onclick:"menuGo('manager')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}])}
    ${grp('Resources',[{icon:'\u{1F517}',label:'Links & tools',onclick:"menuGo('links')"}])}
    ${grp('Setup & Help',[{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'☁️',label:'Cloud sync',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button></div>`;
   $('#modalBg').classList.add('show');
 }
 function menuGo(v){closeModal();go(v);}
+function viewManager(){
+  const P=pnl();const F=forecast();
+  const attnCount=S.companies.filter(c=>!c.rejected&&c.stage!=='won'&&(c.inquiry||(dueStatus(c)&&((dueStatus(c)||{}).k==='overdue'||(dueStatus(c)||{}).k==='today')))).length;
+  let h=`<div class="crumb" onclick="openMenu()">&#9776; Menu</div><h2 class="sec" style="margin-top:8px"><span class="dot"></span>Manager Dashboard</h2>
+  <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Team-wide view. ${S.cloud?'Live team data.':'On this device - turn on Cloud sync for live team activity.'}</div>`;
+  h+=`<div class="grid g4">
+    ${statTile(money(P.net),'Net P&amp;L',P.net>=0?'in the black':'in the red',P.net>=0?'var(--green)':'var(--red)',"go('command')")}
+    ${statTile(money(F.pipeline),'Weighted pipe','forecast','var(--teal)')}
+    ${statTile(P.won,'Deals won','closed','var(--gold)')}
+    ${statTile(attnCount,'Need reply','urgent',attnCount?'var(--red)':'var(--dim)',"go('hitlist')")}
+  </div>`;
+  const rows=REPS.map(r=>{const list=S.companies.filter(c=>c.owner===r.id);const m=metricsFor(list);const st=repStat(r.id);const booked=list.filter(c=>!c.rejected&&c.stage==='won').reduce((a,c)=>a+dealValueOf(c),0);const xp=repXP(r.id);return {r,list,m,st,booked,xp,li:levelInfo(xp)};}).sort((a,b)=>b.booked-a.booked||b.m.won-a.m.won||b.xp-a.xp);
+  const medals=['\u{1F947}','\u{1F948}','\u{1F949}'];
+  h+=`<h2 class="sec"><span class="dot"></span>Leaderboard</h2><div class="grid" style="gap:10px">`;
+  rows.forEach((row,i)=>{const r=row.r;
+    h+=`<div class="rep" style="cursor:pointer" onclick="openRep('${r.id}')">${avatarHTML(r,row.li.level)}
+      <div class="info"><div class="rn">${i<3?medals[i]+' ':''}${esc(r.name)} <span style="font-size:10px;color:var(--dim2);font-weight:600">Lv ${row.li.level}</span></div>
+      <div class="rm">${row.list.length} accts &middot; ${row.m.contacted} contacted &middot; ${row.m.won} won &middot; ${row.st.calls||0} calls &middot; ${row.st.emails||0} emails</div>
+      <div style="font-size:13px;font-weight:900;color:var(--gold);margin-top:3px">${money(row.booked)} booked</div></div></div>`;});
+  h+=`</div>`;
+  const bySec=INDUSTRIES.map(ind=>{const list=S.companies.filter(c=>c.industry===ind.key);const won=list.filter(c=>!c.rejected&&c.stage==='won').reduce((a,c)=>a+dealValueOf(c),0);const wpipe=list.filter(c=>!c.rejected&&c.stage!=='won').reduce((a,c)=>a+dealValueOf(c)*(STAGE_PROB[c.stage]||0),0);return {ind,won,wpipe,total:won+wpipe};}).sort((a,b)=>b.total-a.total).filter(x=>x.total>0);
+  if(bySec.length){const maxT=Math.max(1,...bySec.map(x=>x.total));
+    h+=`<h2 class="sec"><span class="dot"></span>Where the money is</h2><div class="panel">`;
+    bySec.forEach(x=>{h+=`<div class="rrow"><div class="flag">${x.ind.icon}</div><div class="nm">${esc(x.ind.key)}</div><div class="bwrap"><div class="bar"><i style="width:${(x.total/maxT*100).toFixed(0)}%;background:${x.ind.color}"></i></div><div style="font-size:10px;color:var(--dim2);margin-top:3px">${money(x.won)} won &middot; ${money(x.wpipe)} weighted pipe</div></div><div class="pc">${money(x.total)}</div></div>`;});
+    h+=`</div>`;}
+  $('#app').innerHTML=h;
+}
 function viewLinks(){
   let h=`<div class="crumb" onclick="openMenu()">&#9776; Menu</div><h2 class="sec" style="margin-top:8px"><span class="dot"></span>Links &amp; Tools</h2>
   <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Quick links your reps need. Edit these in config.js (SEAQUEST_LINKS).</div>`;
@@ -740,7 +781,7 @@ function viewHitList(){
   const me=REP_BY_ID[S.me]||REPS[0];
   let pool=S.companies.filter(c=>!c.rejected&&c.stage!=='won');
   if(!S.hitAll)pool=pool.filter(c=>c.owner===me.id);
-  const pr=c=>{let p=0;if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(bizStatus(c.geo.terr).status==='open')p+=15;if(c.phone&&telHref(c.phone))p+=3;if(c.email)p+=2;return p;};
+  const pr=c=>{let p=0;const dstat=dueStatus(c);if(c.inquiry)p+=250;if(dstat){if(dstat.k==='overdue')p+=220;else if(dstat.k==='today')p+=140;else if(dstat.k==='soon')p+=80;}if(c.nextStep)p+=100;const s=c.stage;if(s==='convo')p+=70;else if(s==='researched')p+=55;else if(s==='reached')p+=40;else if(s==='prospect')p+=20;if(bizStatus(c.geo.terr).status==='open')p+=15;if(c.phone&&telHref(c.phone))p+=3;if(c.email)p+=2;return p;};
   pool.sort((a,b)=>pr(b)-pr(a)||(a.name||'').localeCompare(b.name||''));
   const top=pool.slice(0,24);
   let h=`<h2 class="sec"><span class="dot"></span>Today's Hit List</h2>
@@ -788,8 +829,17 @@ function viewCommand(){
   const contactedTerr=new Set(S.companies.filter(c=>!c.rejected&&STAGE_IDX[c.stage]>=STAGE_IDX.reached).map(c=>c.geo.terr));
   let h='';
 
+  /* NEEDS ATTENTION */
+  const attn=S.companies.filter(c=>!c.rejected&&c.stage!=='won'&&(c.inquiry||(dueStatus(c)&&(dueStatus(c).k==='overdue'||dueStatus(c).k==='today'))))
+    .sort((a,b)=>{const rk=x=>x.inquiry?0:(((dueStatus(x)||{}).k)==='overdue'?1:2);return rk(a)-rk(b);});
+  if(attn.length){
+    h+=`<h2 class="sec"><span class="dot"></span>\u{1F534} Needs Attention (${attn.length})</h2>
+    <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Inbound replies and due follow-ups. Respond within 1 to 2 days.</div>
+    <div class="grid g2">`+attn.slice(0,6).map(c=>unitCard(c)).join('')+`</div>`;
+  }
+
   /* PROFIT & LOSS */
-  const P=pnl();
+  const P=pnl();const F=forecast();
   const needMore=P.net<0?Math.round((FIN.overhead-P.gross)/(FIN.markup||0.22)):0;
   h+=`<h2 class="sec"><span class="dot"></span>Profit &amp; Loss</h2><div class="panel">
     <div style="display:flex;align-items:baseline;justify-content:space-between">
@@ -799,6 +849,9 @@ function viewCommand(){
     <div style="font-size:10px;color:var(--dim2);margin-top:5px">${P.net>=0?'\u{1F7E2} In the black':'\u{1F534} '+money(needMore)+' more in orders to break even'}</div>
     <div style="display:flex;gap:6px;margin-top:12px">
       ${pnlMini(money(P.revenue),'Revenue')}${pnlMini(money(P.gross),'Gross margin')}${pnlMini(money(-P.overhead),'Op costs')}${pnlMini(P.won,'Deals won')}
+    </div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      ${pnlMini(money(F.pipeline),'Weighted pipe')}${pnlMini(money(F.fProfit),'Forecast profit')}${pnlMini(F.expected,'Expected deals')}
     </div></div>`;
 
   /* DAILY OPS */
@@ -1038,13 +1091,50 @@ function callBtnHTML(c,gidx,big){
   const b=bizStatus(c.geo.terr);const after=b.tz&&b.status!=='open';
   const style=big?'display:flex;font-size:16px;padding:15px':'';
   const warn=after?';color:var(--red);border-color:rgba(255,77,79,.45);background:rgba(255,77,79,.10)':'';
-  return `<a class="ib call" style="${style}${warn}" href="${tel}" onclick="return preCall(${gidx})">\u{1F4DE} ${after?'Call (after hrs)':'Call'}${big?' '+esc(prettyTel(tel)):''}</a>`;
+  return `<a class="ib call" style="${style}${warn}" href="${callHref(c.phone)}" onclick="return preCall(${gidx})">\u{1F4DE} ${after?'Call (after hrs)':'Call'}${big?' '+esc(prettyTel(tel)):''}</a>`;
 }
 function schedEmail(idx){const c=S.companies[idx];const to=$('#e_to').value.trim();const sub=$('#e_sub').value;const body=$('#e_body').value;const tz=terrTZ(c.geo.terr);const ts=nextOpenTs(tz);
   const list=loadSched();list.push({name:c.name,to,subject:sub,body,ts,tz,terr:c.geo.terr,made:Date.now()});saveSched(list);
   bumpStat(S.me,'emails');logAct('Scheduled email to '+c.name);closeModal();render();toast('⏰ Queued for '+whenStr(ts,tz)+' their time');}
 function sendSched(made){const list=loadSched();const i=list.findIndex(x=>x.made===made);if(i<0)return;const s=list[i];const href='mailto:'+encodeURIComponent(s.to)+'?subject='+encodeURIComponent(s.subject)+'&body='+encodeURIComponent(s.body);const a=document.createElement('a');a.href=href;a.click();list.splice(i,1);saveSched(list);logAct('Sent scheduled email to '+s.name);render();toast('Opening mail for '+s.name);}
 function rmSched(made){const list=loadSched();const i=list.findIndex(x=>x.made===made);if(i<0)return;list.splice(i,1);saveSched(list);render();toast('Removed from queue');}
+
+/* ---------- call log + RingCentral dial + AI back door ---------- */
+function callHref(phone){const tel=telHref(phone);if(!tel)return null;const num=tel.replace('tel:','');return (RC.dialTemplate||'tel:{num}').replace('{num}',num);}
+function loadCalls(){try{return JSON.parse(localStorage.getItem('sq_calls')||'{}')}catch(e){return{}}}
+function saveCalls(o){try{localStorage.setItem('sq_calls',JSON.stringify(o))}catch(e){}}
+function callsFor(name){return (loadCalls()[name]||[]);}
+function addCallLog(name,entry){if(!name)return;const o=loadCalls();o[name]=o[name]||[];o[name].unshift(Object.assign({ts:Date.now(),rep:S.me},entry||{}));saveCalls(o);}
+/* BACK DOOR for future RingCentral -> AI transcription. External code / a webhook relay can call:
+     SeaQuest.logCall("Company Name", {outcome:"connected", transcript:"...", summary:"...", rep:"brandon"})
+     SeaQuest.importTranscript("Company Name", "raw transcript text")
+   and it lands on that account's call timeline. */
+window.SeaQuest={
+  logCall:function(name,entry){if(!name)return false;addCallLog(name,entry||{});try{render();}catch(e){}return true;},
+  importTranscript:function(name,transcript,meta){if(!name)return false;addCallLog(name,Object.assign({outcome:'transcript',transcript:transcript||''},meta||{}));try{render();}catch(e){}return true;},
+  list:function(){return loadCalls();}
+};
+function openLog(idx){
+  const c=S.companies[idx];if(!c)return;const logs=callsFor(c.name);
+  const m=$('#modal');
+  m.innerHTML=`<h3>Call log &mdash; ${esc(c.name)}</h3>
+    <div style="font-size:12px;color:var(--dim)">Log the outcome after a call. Paste a transcript if you have one; AI can summarize it.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:12px">
+      ${['Connected','Left voicemail','No answer','Gatekeeper','Not interested','Callback set'].map(o=>`<button class="mini-btn" onclick="document.getElementById('lg_out').value='${o}'">${o}</button>`).join('')}
+    </div>
+    <div class="field"><label>Outcome</label><input id="lg_out" placeholder="Connected / VM / ..."></div>
+    <div class="field"><label>Notes</label><textarea id="lg_notes" rows="2" placeholder="What happened, next step..."></textarea></div>
+    <div class="field"><label>Transcript (optional)</label><textarea id="lg_tr" rows="3" placeholder="Paste a RingCentral transcript here..."></textarea></div>
+    <div class="uacts2" style="margin-top:10px"><button class="ib" style="color:var(--purple)" onclick="summarizeCall(${idx})">✨ Summarize with Claude</button></div>
+    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="closeModal()">Close</button><button class="btn adv" onclick="saveCall(${idx})">Save to timeline</button></div>
+    ${logs.length?`<div style="font-size:11px;color:var(--dim2);text-transform:uppercase;letter-spacing:1px;font-weight:800;margin:16px 2px 6px">History (${logs.length})</div>`+logs.map(L=>`<div style="border:1px solid var(--line);border-radius:10px;padding:9px;margin-top:6px"><div style="font-size:12px;font-weight:700">${esc((REP_BY_ID[L.rep]||{name:''}).name||'')} &middot; ${esc(L.outcome||'call')} <span style="color:var(--dim2);font-weight:400">${timeAgo(L.ts)}</span></div>${L.notes?`<div style="font-size:11px;color:var(--dim);margin-top:3px">${esc(L.notes)}</div>`:''}${L.summary?`<div style="font-size:11px;color:var(--teal);margin-top:3px">✨ ${esc(L.summary)}</div>`:''}${L.transcript?`<div style="font-size:10px;color:var(--dim2);margin-top:3px;max-height:60px;overflow:auto">${esc(L.transcript)}</div>`:''}</div>`).join(''):''}`;
+  $('#modalBg').classList.add('show');
+}
+function saveCall(idx){const c=S.companies[idx];const out=$('#lg_out').value.trim()||'Call';const notes=$('#lg_notes').value.trim();const tr=$('#lg_tr').value.trim();
+  addCallLog(c.name,{outcome:out,notes,transcript:tr});bumpStat(S.me,'calls');logAct(out+' - '+c.name);closeModal();render();toast('✅ Logged');}
+function summarizeCall(idx){const c=S.companies[idx];const tr=$('#lg_tr').value.trim();
+  const prompt=tr?('Summarize this sales call transcript for '+c.name+' in 2 sentences, then list the next step. No em-dashes.\n\n'+tr):('Give me 3 smart discovery questions and 1 next step for a call with '+c.name+' ('+(c.industry||'')+') about custom paper packaging.');
+  askClaude(prompt);}
 
 /* ---------- unit card ---------- */
 function unitCard(c){
@@ -1058,7 +1148,12 @@ function unitCard(c){
     return `<div class="step ${done?'done':''}" style="${done?'background:'+s.color+';border-color:transparent':''}" onclick="setStageIdx(${idx},'${s.key}')" title="${s.label}">${s.short}</div>`;}).join('');
   const stageLabel=rej?REJ.label:(STAGES[sIdx]?STAGES[sIdx].label:'');
   const tel=telHref(c.phone);
+  const ds=dueStatus(c);const nCalls=callsFor(c.name).length;
   const cbits=[];
+  if(c.inquiry)cbits.push('<span style="color:var(--red);font-weight:800">\u{1F4E5} Inbound - reply fast</span>');
+  else if(ds&&ds.k==='overdue')cbits.push('<span style="color:var(--red);font-weight:800">⏰ Overdue '+(-ds.d)+'d</span>');
+  else if(ds&&ds.k==='today')cbits.push('<span style="color:var(--gold);font-weight:800">⏰ Follow up today</span>');
+  else if(ds&&ds.k==='soon')cbits.push('<span style="color:var(--blue)">⏰ Due in '+ds.d+'d</span>');
   if(c.contact)cbits.push(`\u{1F464} ${esc(c.contact)}${c.title?' &middot; '+esc(c.title):''}`);
   if(c.email)cbits.push(`✉️ ${esc(c.email)}`);
   if(c.nextStep)cbits.push(`⏭️ ${esc(c.nextStep)}`);
@@ -1068,9 +1163,12 @@ function unitCard(c){
   const tools=`<div class="uacts2">
     ${callBtnHTML(c,idx,false)}
     <button class="ib mail" onclick="openEmail(${idx})">✉️ Email</button>
+    <button class="ib" onclick="openLog(${idx})">\u{1F4DD} Log${nCalls?' '+nCalls:''}</button>
+    <button class="ib" style="color:var(--gold)" onclick="gotReply(${idx})">\u{1F4E5} Reply</button>
     <button class="ib edit" onclick="openEdit(${idx})">✎ Edit</button>
   </div>`;
-  return `<div class="unit" style="${rej?'border-color:rgba(255,77,79,.4)':''}">
+  const hot=c.inquiry||(ds&&ds.k==='overdue');
+  return `<div class="unit" style="${hot?'border-color:rgba(255,77,79,.6);box-shadow:0 0 0 1px rgba(255,77,79,.18)':(rej?'border-color:rgba(255,77,79,.4)':'')}">
     <div class="u-top"><div style="flex:1">
       <div class="u-nm">${esc(c.name)}</div>
       <div class="u-meta">
@@ -1111,6 +1209,8 @@ async function setStageIdx(i,key){const c=S.companies[i];if(!c)return;
 async function advance(i){const c=S.companies[i];if(!c)return;const ni=Math.min(STAGES.length-1,STAGE_IDX[c.stage]+1);await setStageIdx(i,STAGES[ni].key);}
 async function reject(i){const c=S.companies[i];if(!c)return;await writeStage(c,c.stage,true);logAct('Rejected '+c.name);render();toast(c.name+' marked resisted');}
 async function reopen(i){const c=S.companies[i];if(!c)return;await writeStage(c,'reached',false);logAct('Reopened '+c.name);render();toast(c.name+' reopened');}
+async function gotReply(i){const c=S.companies[i];if(!c)return;const t=new Date(Date.now()+86400000).toISOString().slice(0,10);const ov=loadOv();ov.edits=ov.edits||{};ov.edits[c.name]=Object.assign({},ov.edits[c.name]||{},{inquiry:true,dueDate:t});saveOv(ov);c.inquiry=true;c.dueDate=t;if(!c.rejected&&c.stage!=='won'&&STAGE_IDX[c.stage]<STAGE_IDX.convo){await writeStage(c,'convo',false);}logAct('Inbound reply from '+c.name);render();toast('\u{1F4E5} '+c.name+' - reply by tomorrow');}
+function clearDue(i){const c=S.companies[i];if(!c)return;const ov=loadOv();ov.edits=ov.edits||{};ov.edits[c.name]=Object.assign({},ov.edits[c.name]||{},{inquiry:false,dueDate:''});saveOv(ov);c.inquiry=false;c.dueDate='';render();toast('Cleared');}
 
 /* ---------- Sectors ---------- */
 function viewSectors(){
@@ -1333,7 +1433,7 @@ const EMAIL_TPLS=[
    body:"Hi [Name], this is [Rep] with SeaQuest Global, a veteran owned paper packaging company. We help brands like [Company] source custom bags and boxes from our own factories. You can reach me at [your number], and I'll follow up by email too. Thanks!"}
 ];
 function fillTpl(str,c,rep){return String(str).replace(/\[Name\]/g,c.contact||'there').replace(/\[Company\]/g,c.name||'your company').replace(/\[Rep\]/g,rep.name).replace(/\[Title\]/g,c.title||'');}
-function trackCall(i){const c=S.companies[i];if(!c)return;bumpStat(S.me,'calls');logAct('Called '+c.name);}
+function trackCall(i){const c=S.companies[i];if(!c)return;bumpStat(S.me,'calls');logAct('Called '+c.name);addCallLog(c.name,{outcome:'dialed'});}
 function openEmail(idx){
   const c=S.companies[idx];if(!c)return;const rep=REP_BY_ID[S.me]||REPS[0];
   const b=bizStatus(c.geo.terr);const quiet=b.tz&&b.status==='closed';
@@ -1384,6 +1484,8 @@ function openEdit(idx){
     <div class="field"><label>Location</label><input id="ed_loc" value="${esc(c.location||'')}" placeholder="Austin, TX"></div>
     <div class="field"><label>Stage</label><select id="ed_stage">${STAGES.map(s=>`<option value="${s.key}" ${s.key===c.stage&&!c.rejected?'selected':''}>${s.label}</option>`).join('')}<option value="rejected" ${c.rejected?'selected':''}>Rejected</option></select></div>
     <div class="field"><label>Next step / follow-up</label><input id="ed_next" value="${esc(c.nextStep||'')}" placeholder="Call back Fri, ask for samples"></div>
+    <div class="field"><label>Follow-up date</label><input id="ed_due" type="date" value="${esc(c.dueDate||'')}"></div>
+    <div class="field"><label style="display:flex;align-items:center;gap:8px;text-transform:none;letter-spacing:0;color:var(--tx);font-size:13px"><input type="checkbox" id="ed_inq" ${c.inquiry?'checked':''} style="width:auto;margin:0"> Inbound inquiry - respond in 1-2 days</label></div>
     <div class="field"><label>Deal value (customer order $)</label><input id="ed_deal" type="number" value="${c.dealValue||''}" placeholder="e.g. 15000 - feeds the P&L when won"></div>
     <div class="field"><label>Notes</label><textarea id="ed_notes" rows="3">${esc(c.notes||'')}</textarea></div>
     <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Cancel</button><button class="btn adv" onclick="submitEdit(${idx})">Save</button></div>`;
@@ -1393,7 +1495,7 @@ async function submitEdit(idx){
   const c=S.companies[idx];if(!c)return;const name=c.name;
   const patch={contact:$('#ed_contact').value.trim(),title:$('#ed_title').value.trim(),email:$('#ed_email').value.trim(),
     phone:$('#ed_phone').value.trim(),industry:$('#ed_ind').value,location:$('#ed_loc').value.trim(),
-    nextStep:$('#ed_next').value.trim(),dealValue:(parseFloat(String($('#ed_deal').value||'').replace(/[^0-9.]/g,''))||0),notes:$('#ed_notes').value};
+    nextStep:$('#ed_next').value.trim(),dueDate:$('#ed_due').value||'',inquiry:$('#ed_inq').checked,dealValue:(parseFloat(String($('#ed_deal').value||'').replace(/[^0-9.]/g,''))||0),notes:$('#ed_notes').value};
   const owner=$('#ed_owner').value;const stageVal=$('#ed_stage').value;
   const ov=loadOv();ov.edits[name]=Object.assign({},ov.edits[name]||{},patch);ov.owners[name]=owner;saveOv(ov);
   if(stageVal==='rejected'){if(!c.rejected)await writeStage(c,c.stage,true);}

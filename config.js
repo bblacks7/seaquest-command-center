@@ -265,6 +265,15 @@ window.SEAQUEST_ACADEMY = [
     ] }
 ];
 
+// ---- Calls: route through RingCentral so they record (for future AI transcription) ----
+// dialTemplate builds the call link; {num} is the phone number (digits only, may start with +).
+// "tel:{num}" = phone default. Set to a RingCentral click-to-dial link so calls are recorded, e.g.
+// "rcmobile://call?number={num}" (RingCentral mobile app) or your RingOut URL template.
+window.SEAQUEST_RINGCENTRAL = { dialTemplate: "tel:{num}", label: "RingCentral" };
+
+// ---- Sales forecast: probability a deal closes at each stage ----
+window.SEAQUEST_STAGE_PROB = { prospect:0.05, researched:0.12, reached:0.30, convo:0.60, won:1.0 };
+
 // ---- Links & Tools page (edit freely; url opens externally, view jumps in-app, blank = add later) ----
 window.SEAQUEST_LINKS = [
   { group:"Get set up", items:[
