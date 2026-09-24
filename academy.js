@@ -19,7 +19,12 @@ window.SEAQUEST_ACADEMY = [
         "Reps never quote prices. You gather specs and send them to Brandon for a sharp, consistent quote.",
         "This protects margins and keeps every quote unified.",
         "Your job: find the buyer, build the relationship, and get complete specs."],
-      ex:{good:["Let me put a quick quote together for you"], bad:["It'll run about X per unit (never quote on your own)"]}}
+      ex:{good:["Let me put a quick quote together for you"], bad:["It'll run about X per unit (never quote on your own)"]}},
+    { t:"Case in point", b:[
+        "Sarah runs purchasing for a 40-location burger chain. She says 'we already have a bag supplier.'",
+        "The rep stays on message: veteran-owned, our own factories, in-house printing, and asks who handles packaging.",
+        "No pitch, no price. Just credibility and a question."],
+      ex:{note:"Result: Sarah gave her direct line and agreed to compare a quote. On message, in our lane, moved forward."}}
   ],
   quiz:[
     { q:"How should you describe SeaQuest?", a:["A packaging broker","A reseller","The US sales arm for our own factories"], correct:2 },
@@ -42,7 +47,12 @@ window.SEAQUEST_ACADEMY = [
         "Two to three sentences: who you are, what we do, and ask for the right person.",
         "Friendly, human, and specific to them.",
         "No em-dashes, no walls of text."],
-      ex:{script:"Hi [Name], I'm [you], owner of SeaQuest Global, a veteran-owned company with our own sustainable paper factories overseas. Could you point me to whoever handles packaging or vendor purchasing? Happy to put a quick quote together."}}
+      ex:{script:"Hi [Name], I'm [you], owner of SeaQuest Global, a veteran-owned company with our own sustainable paper factories overseas. Could you point me to whoever handles packaging or vendor purchasing? Happy to put a quick quote together."}},
+    { t:"Case in point", b:[
+        "A rep's first email opened with 'We represent a factory in Asia...' and got no reply.",
+        "Rewritten: 'veteran-owned, our own factories, who handles your packaging?' - a reply came the next day.",
+        "Same offer, different words. Language changed the outcome."],
+      ex:{good:["Our own factories, veteran-owned, who handles packaging?"], bad:["We represent a factory overseas"]}}
   ],
   quiz:[
     { q:"Which phrase is NOT allowed?", a:["US sales arm for our factories","We represent the factory","Veteran-owned paper company"], correct:1 },
@@ -64,7 +74,12 @@ window.SEAQUEST_ACADEMY = [
         "Log every touch in the app and set a next step with a date.",
         "No next step means the lead goes cold.",
         "Persistence beats brilliance. Most deals take several touches."],
-      ex:{note:"After every call or email, set a follow-up date. The app resurfaces it in Needs Attention."}}
+      ex:{note:"After every call or email, set a follow-up date. The app resurfaces it in Needs Attention."}},
+    { t:"Case in point", b:[
+        "Touch 1: a call, buyer unavailable, got the name from reception.",
+        "Touch 2: a two-sentence email that afternoon. No reply.",
+        "Touch 3: a short LinkedIn note referencing the email. The buyer replied and booked a call."],
+      ex:{note:"Most wins come on touch 3 to 5. The rep who logs and follows up is the rep who lands the meeting."}}
   ],
   quiz:[
     { q:"What is the goal of a first cold reach?", a:["Close the sale","Find who handles packaging or purchasing","Quote a price"], correct:1 },
@@ -86,7 +101,12 @@ window.SEAQUEST_ACADEMY = [
         "Still get a name. A name lets you follow up by email and LinkedIn.",
         "Ask when is a good time to reach the buyer directly.",
         "Leave a short, friendly message and follow up."],
-      ex:{note:"'No problem - what's their name so I can send a quick note?' gets you further than pushing."}}
+      ex:{note:"'No problem - what's their name so I can send a quick note?' gets you further than pushing."}},
+    { t:"Case in point", b:[
+        "The gatekeeper wouldn't transfer the rep to purchasing.",
+        "The rep stayed friendly, got the buyer's name and email, and thanked her by name.",
+        "A short email the same day, referencing the call, landed the meeting."],
+      ex:{good:["Thanks so much - what's her name and email so I can send a quick note?"], bad:["Just put me through to whoever buys stuff"]}}
   ],
   quiz:[
     { q:"How do you treat a gatekeeper?", a:["Push past them","Warm and brief, ask for the right person by role","Hang up"], correct:1 },
@@ -108,7 +128,12 @@ window.SEAQUEST_ACADEMY = [
         "Do not quote a price. Offer to put a quick quote together.",
         "Get the specs: dimensions, gsm, quantity, and artwork.",
         "End with a next step and a date."],
-      ex:{good:["Let me put a quick quote together - can you share your sizes and volumes?"], bad:["It'll be about X per unit"]}}
+      ex:{good:["Let me put a quick quote together - can you share your sizes and volumes?"], bad:["It'll be about X per unit"]}},
+    { t:"Case in point", b:[
+        "The buyer mentioned their current bags tear at the handle.",
+        "The rep asked two more questions, then positioned a heavier gsm and reinforced handle.",
+        "That one pain point became the whole reason to switch. The rep captured specs and set a quote date."],
+      ex:{note:"Find the pain, connect our strength to it, then get the specs. That's the conversation working."}}
   ],
   quiz:[
     { q:"When they ask for a price, you...", a:["Quote a number on the spot","Offer to put a quick quote together and get specs","End the call"], correct:1 },
@@ -130,7 +155,12 @@ window.SEAQUEST_ACADEMY = [
         "Consistent language protects our brand and our margins.",
         "Quotes through Brandon keep pricing sharp and unified.",
         "These guardrails keep every rep credible."],
-      ex:{note:"When in doubt, gather the info and check with Brandon. Never freelance on price."}}
+      ex:{note:"When in doubt, gather the info and check with Brandon. Never freelance on price."}},
+    { t:"Case in point", b:[
+        "A buyer pushed hard for a number. The rep almost blurted 'about nine cents a bag.'",
+        "Instead the rep said 'let me get you a sharp quote' and gathered specs.",
+        "Brandon quoted lower than the guess - and the rep would have left money on the table."],
+      ex:{note:"Guessing a price on the spot either kills margin or scares the buyer. Gather specs, quote through Brandon."}}
   ],
   quiz:[
     { q:"Which is a DON'T?", a:["Follow up","Quote a price yourself","Log the call"], correct:1 },
@@ -152,7 +182,12 @@ window.SEAQUEST_ACADEMY = [
         "Our factories handle compliance labels, barcodes, and track-and-trace in-house.",
         "Full-color, foil, emboss, and specialty finishes are all on the table.",
         "Sustainable paper is a core part of our story."],
-      ex:{good:["We can do FDA warnings, multi-language, foil and emboss in-house","We can add GS1 barcodes and QR track-and-trace"]}}
+      ex:{good:["We can do FDA warnings, multi-language, foil and emboss in-house","We can add GS1 barcodes and QR track-and-trace"]}},
+    { t:"Case in point", b:[
+        "A buyer worried an overseas supplier meant surprise import duties on paper bags.",
+        "The rep explained we source from non-covered origins, so no anti-dumping hit.",
+        "The concern that was almost a dealbreaker became a reason to trust us."],
+      ex:{note:"Knowing the duty story turns a scary objection into proof we know our business."}}
   ],
   quiz:[
     { q:"Roughly where does our minimum order start?", a:["20,000 units","10 units","1 million units"], correct:0 },
@@ -180,7 +215,12 @@ window.SEAQUEST_ACADEMY = [
         "Know their brand, their current packaging, and one clear reason we fit before you call.",
         "Confidence comes from preparation, not hype.",
         "Walk in expecting to help them decide."],
-      ex:{note:"Two minutes on their website before a call changes the whole conversation."}}
+      ex:{note:"Two minutes on their website before a call changes the whole conversation."}},
+    { t:"Case in point", b:[
+        "A nervous new rep hedged: 'if you ever maybe want to try us sometime.' The buyer shrugged.",
+        "Next call, the rep used assumptive language: 'when we run your first order...'.",
+        "Same buyer, more certainty, and this time they leaned in and asked about timing."],
+      ex:{good:["When we run your first order...","Once you approve the art..."], bad:["If you ever maybe want to try us..."]}}
   ],
   quiz:[
     { q:"Closing begins...", a:["only at the very end","at hello, on every touch","after the quote is sent"], correct:1 },
@@ -208,7 +248,12 @@ window.SEAQUEST_ACADEMY = [
         "Pain plus timing plus volume equals a real opportunity.",
         "Missing one? Nurture and set a follow-up date.",
         "Write the compelling reason to change in the account notes."],
-      ex:{note:"No pain and no timeline isn't dead - it's a follow-up. Set the date."}}
+      ex:{note:"No pain and no timeline isn't dead - it's a follow-up. Set the date."}},
+    { t:"Case in point", b:[
+        "In discovery, the rep learned the buyer was launching a new product line in eight weeks.",
+        "That launch was the timing window - a hard deadline the buyer couldn't miss.",
+        "The rep flagged it as hot, prioritized specs, and worked backward from the launch date."],
+      ex:{note:"A launch or reorder date is gold. It creates natural urgency you don't have to manufacture."}}
   ],
   quiz:[
     { q:"Before investing time, confirm they are...", a:["a decision-maker or influencer","a competitor","just browsing"], correct:0 },
@@ -236,35 +281,50 @@ window.SEAQUEST_ACADEMY = [
         "Reps don't price. Send the complete specs to Brandon for the quote.",
         "A complete, tidy spec sheet gets a faster, sharper quote.",
         "Set expectations: 'I'll get this to our team and come back with a quote.'"],
-      ex:{good:["I'll put these specs together and get you a quote"], bad:["That'll be about X per unit"]}}
+      ex:{good:["I'll put these specs together and get you a quote"], bad:["That'll be about X per unit"]}},
+    { t:"Case in point", b:[
+        "On the call, the rep calmly walked the spec checklist: item, size, gsm, quantity, art, ship-to, deadline.",
+        "By the end, the spec sheet was complete. The rep sent it to Brandon that afternoon.",
+        "Brandon quoted the same day - and a same-day quote feels premium to the buyer."],
+      ex:{note:"Complete specs in, fast quote out. Speed and completeness are how you look like a pro."}}
   ],
   quiz:[
     { q:"For SeaQuest, the real close is...", a:["quoting a price yourself","getting complete specs to Brandon","sending a brochure"], correct:1 },
     { q:"Which is NOT a spec you need?", a:["dimensions and gsm","quantity and artwork","their CEO's birthday"], correct:2 },
     { q:"Who prepares the price?", a:["the rep","Brandon / quotes","the factory"], correct:1 }]},
 
-{ id:"close-objections", track:"Closing Masterclass", icon:"\u{1F6E1}️", title:"4. Handling Objections", xp:90, badge:{i:"\u{1F6E1}️",t:"Objection Slayer"},
+{ id:"close-objections", track:"Closing Masterclass", icon:"\u{1F6E1}️", title:"4. Handling Objections", xp:100, badge:{i:"\u{1F6E1}️",t:"Objection Slayer"},
   slides:[
     { t:"Objections are green lights", b:[
         "An objection means they're seriously considering it.",
         "Stay calm and curious, never defensive.",
         "Use feel, felt, found: I understand how you feel, others felt the same, here's what they found."],
       ex:{script:"I hear you. A lot of our best customers felt the same at first, and here's what they found..."}},
-    { t:"Price and 'we have a supplier'", b:[
-        "Price: never quote on the spot. Offer a sharp quote and lead with value from our own factories.",
-        "'We already have a supplier': it costs nothing to compare. Ask for a side-by-side quote.",
-        "Position a quote as low-risk and easy."],
-      ex:{good:["Let me get you a sharp quote to compare - no obligation"], bad:["We're cheaper (you can't quote, so don't claim it)"]}},
-    { t:"Minimums and 'you're overseas'", b:[
-        "'Your minimum is too high': bundle SKUs or set up an annual program to reach volume.",
-        "'You're overseas': we run our own factories, print in-house including compliance labels, and source around duties.",
-        "Turn each objection into a reason we're a fit."],
+    { t:"Objection: 'Your price / just cheaper elsewhere'", b:[
+        "Never quote on the spot. Anchor on value, not a number.",
+        "Our own factories and smart sourcing mean real value, and a quote is free to compare.",
+        "Ask what 'good' looks like for them so the quote hits."],
+      ex:{good:["Let me get you a sharp quote to compare, no obligation - what price range are you working with?"], bad:["We're cheaper (you can't quote, so don't claim it)"]}},
+    { t:"Objection: 'We already have a supplier'", b:[
+        "Great - that means they buy this and value it. You're in the right place.",
+        "Ask for a side-by-side quote. It costs them nothing and keeps their supplier honest.",
+        "Look for a gap: lead time, minimums, quality, or service."],
+      ex:{script:"Makes sense. Most of our customers had a supplier too. What would have to be better for you to consider a switch?"}},
+    { t:"Objection: 'Minimum too high' / 'You're overseas'", b:[
+        "Minimum: bundle their SKUs or set an annual program to reach the 20k volume.",
+        "Overseas: we run our own factories, print in-house including compliance labels, and source around duties.",
+        "Turn each concern into a reason we're actually the better fit."],
       ex:{script:"We can combine your sizes into one run to hit the minimum, and everything - including labels - is printed in our own factories."}},
-    { t:"The stall: 'just send info'", b:[
-        "'Just send me info' is usually a polite stall.",
+    { t:"Objection: 'Just send me info'", b:[
+        "That's usually a polite stall.",
         "Pin a specific next step and a date instead of emailing a PDF into the void.",
-        "Give them a reason to talk again."],
-      ex:{good:["Happy to - can we grab 10 minutes Thursday to go over a quote?"], bad:["Emailing a brochure and hoping"]}}
+        "Give them a concrete reason to talk again."],
+      ex:{good:["Happy to - can we grab 10 minutes Thursday to walk through a quote?"], bad:["Emailing a brochure and hoping"]}},
+    { t:"Case in point", b:[
+        "The buyer said 'we're a little nervous about overseas suppliers.'",
+        "The rep didn't get defensive. Feel, felt, found: acknowledged it, then explained our own factories and in-house compliance labels.",
+        "The concern flipped into confidence, and the buyer asked for a quote."],
+      ex:{note:"Every objection is a door. Acknowledge, reframe with a real SeaQuest strength, then advance."}}
   ],
   quiz:[
     { q:"An objection usually means...", a:["they hate you","they're considering it","the call is over"], correct:1 },
@@ -292,7 +352,12 @@ window.SEAQUEST_ACADEMY = [
         "Every conversation ends with a next step tied to a date.",
         "Summarize the agreement out loud so you're both clear.",
         "Never leave it at 'I'll follow up sometime'."],
-      ex:{good:["So I'll send the quote Thursday, you'll review by Monday, and we'll talk Tuesday. Sound good?"]}}
+      ex:{good:["So I'll send the quote Thursday, you'll review by Monday, and we'll talk Tuesday. Sound good?"]}},
+    { t:"Case in point", b:[
+        "The rep floated a trial close: 'any reason we couldn't do a first run if the quote's right?'",
+        "The buyer named one worry about lead time. The rep handled it, then asked and went quiet.",
+        "The buyer agreed to review the quote and decide by Friday. A soft ask, a firm date."],
+      ex:{note:"The trial close surfaced the last objection. Handling it, then asking, sealed the next step."}}
   ],
   quiz:[
     { q:"A trial close...", a:["ends the relationship","tests how ready they are to buy","quotes a price"], correct:1 },
@@ -320,10 +385,84 @@ window.SEAQUEST_ACADEMY = [
         "Mark it Won and enter the order value. That grows your P&L and forecast.",
         "Log every step so the next reorder is easy.",
         "Set a follow-up for the reorder. Won accounts become repeat revenue."],
-      ex:{note:"Entering the deal value is how your Booked number and the team forecast go up."}}
+      ex:{note:"Entering the deal value is how your Booked number and the team forecast go up."}},
+    { t:"Case in point", b:[
+        "An inbound reply came in at 4pm. The rep replied by 8am next morning, first thing.",
+        "They tied urgency to the buyer's real reorder date and asked for the PO and artwork.",
+        "PO in hand, marked Won with the order value. Then set a reorder follow-up for 90 days out."],
+      ex:{note:"Fast follow-up plus honest urgency plus clean paperwork equals a closed deal and a repeat customer."}}
   ],
   quiz:[
     { q:"How fast should you follow up on an inbound reply?", a:["within 1 to 2 days","within a month","whenever you get to it"], correct:0 },
     { q:"To seal it, confirm the quote and then get...", a:["nothing","the PO and artwork approval","a brand new lead"], correct:1 },
-    { q:"After you win, in the app you...", a:["do nothing","mark Won and enter the order value","delete the account"], correct:1 }]}
+    { q:"After you win, in the app you...", a:["do nothing","mark Won and enter the order value","delete the account"], correct:1 }]},
+
+/* ================= CAPSTONE: DEAL WALKTHROUGH ================= */
+{ id:"deal-walkthrough", track:"Capstone", icon:"\u{1F3AC}", title:"Deal Walkthrough: Coastal Coffee Co", xp:150, badge:{i:"\u{1F3AC}",t:"Full-Cycle Closer"},
+  slides:[
+    { t:"The target", b:[
+        "Coastal Coffee Co: a 60-location regional coffee chain, growing fast.",
+        "They use paper hot cups, sleeves, and retail bean bags - real, repeat volume.",
+        "Why them: volume, a clear packaging need, and room to grow."],
+      ex:{note:"Pick targets with real volume and a clear need. Coastal checks both boxes."}},
+    { t:"Research", b:[
+        "The rep used Research with Claude to pull Coastal and a few peers with contacts.",
+        "Imported them, and the account showed a procurement lead: 'Dana Ruiz, Purchasing'.",
+        "Two minutes on their site: new stores opening, sustainability messaging."],
+      ex:{script:"[Claude prompt] Find real coffee chains in the Southeast that buy paper cups and bags at volume, with a procurement contact."}},
+    { t:"The gatekeeper", b:[
+        "First call, reception picked up. The rep stayed warm and asked by role.",
+        "Got Dana's direct line and email. Thanked reception by name.",
+        "Sent a two-sentence email the same afternoon."],
+      ex:{script:"Hi, who handles your packaging purchasing, and what's the best way to reach them? We make custom paper cups and bags."}},
+    { t:"First call opener", b:[
+        "Reached Dana. Two-sentence intro, then a question, not a pitch.",
+        "Veteran-owned, our own factories, in-house printing.",
+        "Asked if she was happy with her current cups and supplier."],
+      ex:{script:"Hi Dana, I'm [you] with SeaQuest Global. We make custom paper cups and bags from our own factories. Are you happy with your current packaging and supplier?"}},
+    { t:"Discovery: the pain", b:[
+        "Dana's cups were fine, but lead times from her supplier were slipping as stores opened.",
+        "She also wanted better sustainability messaging on the cups for the brand refresh.",
+        "The rep dug: sizes, volumes, and the timing of the refresh."],
+      ex:{good:["What's your current supplier like on lead times?","What would you change about the cups?"]}},
+    { t:"Discovery: numbers and timing", b:[
+        "About 900,000 cups a year across three sizes, plus retail bean bags.",
+        "A brand refresh launches in 10 weeks - a hard deadline.",
+        "The rep flagged the account hot and worked backward from the launch."],
+      ex:{note:"Volume well over our minimum, real pain (lead times), and a deadline. This is a real deal."}},
+    { t:"Getting the specs", b:[
+        "The rep walked the checklist: cup sizes, paper weight, quantities, print colors, and the new artwork.",
+        "Plus the retail bags: dimensions, kraft, handles, quantity, ship-to, and the launch deadline.",
+        "Asked Dana to send the refreshed artwork."],
+      ex:{script:"Let's get you a sharp quote. Can you send the new artwork, and confirm the three cup sizes and annual volumes?"}},
+    { t:"The objection", b:[
+        "Dana paused: 'You're overseas - I'm nervous about lead times and duties.'",
+        "The rep used feel, felt, found: acknowledged it, then explained our own factories, in-house printing, and smart sourcing around duties.",
+        "Reframed lead time as a strength: we plan production around her launch date."],
+      ex:{script:"I understand. Others felt the same, and what they found is our own factories and planning around their date actually made lead times more reliable."}},
+    { t:"Trial close and the ask", b:[
+        "Rep: 'If the quote lands where you'd like, any reason we couldn't run the cups and bags together?'",
+        "Dana's only worry was hitting the launch. The rep committed to a timeline that clears it.",
+        "The rep asked for a decision date, then went quiet."],
+      ex:{good:["I'll get you the quote by Thursday. If it works, can we lock production Monday to clear your launch?"]}},
+    { t:"Quote handoff", b:[
+        "Reps don't price. The rep packaged the complete specs and sent them to Brandon.",
+        "Set expectations with Dana: quote by Thursday.",
+        "Logged everything and set a follow-up date."],
+      ex:{note:"Complete specs to Brandon on the same day means a fast, sharp quote back."}},
+    { t:"Follow up fast", b:[
+        "Dana replied Thursday night with a question about the bag handles.",
+        "The app flagged it inbound. The rep answered first thing Friday, within the 1-2 day rule.",
+        "Tied urgency to her launch: lock production now to clear the date."],
+      ex:{note:"Speed on the inbound reply kept the deal warm and showed Dana we're reliable."}},
+    { t:"Sealing it and the reorder", b:[
+        "Dana approved the artwork and sent a PO for the cups and bags.",
+        "The rep confirmed the PO, locked artwork, and handed off to production.",
+        "Marked Won in the app with the order value, then set a 90-day reorder follow-up."],
+      ex:{note:"One good deal became a repeat customer. That reorder follow-up is future revenue on autopilot."}}
+  ],
+  quiz:[
+    { q:"What made Coastal a strong target?", a:["low volume, no need","real volume, clear need, room to grow","they were nearby"], correct:1 },
+    { q:"When Dana worried about overseas lead times, the rep...", a:["quoted a low price","used feel-felt-found and reframed our factories as a strength","gave up"], correct:1 },
+    { q:"After the PO came in, the rep...", a:["did nothing","marked Won, entered the value, set a reorder follow-up","deleted the account"], correct:1 }]}
 ];

@@ -647,6 +647,9 @@ function viewAcademy(){
   <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Learn the SeaQuest playbook. Pass a module's check to earn XP and a badge for <b style="color:var(--teal)">${esc(me.name)}</b>.</div>
   <div class="panel"><div class="barlab"><span>Training complete</span><b>${doneList.length} / ${ACADEMY.length}</b></div><div class="bar"><i style="width:${(doneList.length/Math.max(1,ACADEMY.length)*100).toFixed(1)}%;background:var(--gold)"></i></div>
     <div style="font-size:10px;color:var(--dim2);margin-top:5px">${totalXP} XP earned from training so far</div></div>`;
+  h+=`<div class="panel" style="border-color:rgba(179,127,235,.45);background:linear-gradient(135deg,rgba(179,127,235,.10),transparent);display:flex;align-items:center;gap:11px;margin-top:12px">
+    <div style="font-size:26px">\u{1F3A4}</div><div style="flex:1;font-size:12px;color:var(--dim)">Practice a real call out loud. Claude plays the prospect, then coaches you.</div>
+    <button class="btn adv sm" onclick="openPractice('full','')">Practice</button></div>`;
   const tracks=[];const byTrack={};
   ACADEMY.forEach(m=>{const t=m.track||'Fundamentals';if(!byTrack[t]){byTrack[t]=[];tracks.push(t);}byTrack[t].push(m);});
   tracks.forEach(t=>{const mods=byTrack[t];const td=mods.filter(m=>trainDone(me.id,m.id)).length;
@@ -694,7 +697,9 @@ function renderModule(id){
       <div id="quizMsg" style="font-size:12px;margin-top:10px;min-height:16px"></div>
       <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm" onclick="modNav('${id}',-1)">Back</button><button class="btn adv" onclick="submitModule('${id}')">${d?'Check again':'Complete & earn badge'}</button></div>`;
   }
-  $('#modal').innerHTML=`<h3>${m.icon} ${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</h3>${bar}${body}`;
+  const scen=MOD_SCEN[id]||'full';
+  const pbtn=`<button class="mini-btn" style="color:var(--purple);margin:2px 0 10px" onclick="openPractice('${scen}','')">\u{1F3A4} Practice this with Claude</button>`;
+  $('#modal').innerHTML=`<h3>${m.icon} ${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</h3>${bar}${pbtn}${body}`;
   $('#modal').scrollTop=0;
   $('#modalBg').classList.add('show');
 }
@@ -710,6 +715,37 @@ function submitModule(id){
   if(!already){addTrainingXP(me.id,m.xp);logAct('Completed training: '+m.title);}
   closeModal();celebrate();render();
   toast(already?('✅ Reviewed: '+m.title):('\u{1F393} '+m.badge.t+' badge earned!  +'+m.xp+' XP'));
+}
+/* ---------- practice mode: role-play with Claude ---------- */
+const PRACTICE_SCENARIOS=[
+  {id:'full',      label:'Full call, hello to close', desc:"Play a complete call realistically, from answering the phone through to a next step."},
+  {id:'cold',      label:'Cold call opener',          desc:"I'm cold calling for the first time. Answer as a busy person and make me earn the buyer's name and a moment of your time."},
+  {id:'gate',      label:'Get past the gatekeeper',   desc:"You're the receptionist or assistant. I need to reach whoever handles packaging or purchasing."},
+  {id:'discovery', label:'Discovery call',            desc:"You're the packaging or procurement buyer on our first real conversation. Have real needs and some skepticism."},
+  {id:'objections',label:'Handle objections',         desc:"You're a buyer who likes your current supplier and pushes back on price, minimums, and us being overseas."},
+  {id:'ask',       label:'Trial close & ask',         desc:"You're interested but not committed. Make me work to move you toward a quote and a first order."}
+];
+const MOD_SCEN={contact:'cold',gate:'gate',convo:'discovery','close-discovery':'discovery','close-objections':'objections','close-ask':'ask','close-specs':'discovery','close-handoff':'ask','deal-walkthrough':'full'};
+function openPractice(scenId,sector){
+  const m=$('#modal');
+  m.innerHTML=`<h3>\u{1F3A4} Practice with Claude</h3>
+   <div style="font-size:12px;color:var(--dim)">Role-play a call out loud. Claude plays the prospect, stays in character, then coaches you. Uses the free Claude app - tip: turn on Claude's voice mode.</div>
+   <div class="field"><label>Scenario</label><select id="pr_scen">${PRACTICE_SCENARIOS.map(s=>`<option value="${s.id}" ${s.id===scenId?'selected':''}>${s.label}</option>`).join('')}</select></div>
+   <div class="field"><label>Their sector</label><select id="pr_sec"><option value="">Any sector</option>${INDUSTRIES.map(i=>`<option ${i.key===sector?'selected':''}>${i.key}</option>`).join('')}</select></div>
+   <div class="field"><label>Difficulty</label><select id="pr_diff"><option>friendly</option><option selected>realistic</option><option>tough</option></select></div>
+   <div class="uacts2" style="margin-top:14px"><button class="ib" style="color:var(--purple);border-color:#b37feb55;background:#b37feb14" onclick="startPractice()">\u{1F3A4} Start practice in Claude</button></div>
+   <div style="font-size:11px;color:var(--dim2);margin-top:10px">In Claude, say your lines out loud. Type END when you want your coaching feedback.</div>
+   <div style="display:flex;gap:8px;margin-top:14px"><button class="btn" onclick="closeModal()">Close</button></div>`;
+  $('#modalBg').classList.add('show');
+}
+function startPractice(){
+  const scen=PRACTICE_SCENARIOS.find(s=>s.id===$('#pr_scen').value)||PRACTICE_SCENARIOS[0];
+  const sector=$('#pr_sec').value;const diff=$('#pr_diff').value;
+  const sec=sector?('in the '+sector+' space'):'in one of our sectors (restaurants, foodservice, packaging, coffee, industrial sacks, tobacco, or ammo)';
+  const prompt="Let's role-play a sales call so I can practice out loud. You play a "+diff+" prospect "+sec+". I'm a rep for SeaQuest Global, a veteran-owned company that supplies custom paper packaging (bags, boxes, sacks, printed) from our own factories. Minimum orders are around 20,000 units, and I never quote prices myself; quotes come from our team.\n\n"
+   +"Scenario: "+scen.desc+"\n\n"
+   +"How to play it: stay fully in character as the prospect, react like a real busy buyer, raise realistic objections, and only warm up if I earn it. Do not coach me mid-call. When I type END, drop character and give quick coaching: 2 things I did well and 2 to improve, judged on solid B2B selling and these SeaQuest rules - never quote a price, position us as the US sales arm for our own factories (never 'broker' or 'factory-direct'), dig for specs (size, gsm, quantity, artwork), handle objections with feel-felt-found, and always set a next step with a date. Keep it real. Begin now by speaking first, in character.";
+  askClaude(prompt);logAct('Practiced: '+scen.label);
 }
 function toggleResearch(k){S.researchOpen=S.researchOpen||{};S.researchOpen[k]=!S.researchOpen[k];render();}
 function viewResearch(){
