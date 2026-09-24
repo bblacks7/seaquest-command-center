@@ -638,7 +638,7 @@ function openMenu(){
    ${grp('Map & Data',[{icon:'\u{1F5FA}️',label:'War Map',onclick:"menuGo('map')"},{icon:'\u{1F4CB}',label:'Pipeline',onclick:"menuGo('pipeline')"},{icon:'\u{1F4CA}',label:'Sectors',onclick:"menuGo('sectors')"}])}
    ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F4C8}',label:'Manager dashboard',onclick:"menuGo('manager')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}].concat((S.profile&&S.profile.is_admin)?[{icon:'✅',label:'Approvals (admin)',onclick:"menuGo('approvals')"}]:[]))}
    ${grp('Resources',[{icon:'\u{1F517}',label:'Links & tools',onclick:"menuGo('links')"}])}
-   ${grp('Setup & Help',[{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'☁️',label:'Cloud sync',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
+   ${grp('Setup & Help',[{icon:'\u{1F514}',label:'Turn on daily reminders',onclick:"closeModal();enablePush()"},{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'\u{1F511}',label:'Account / sign out',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button></div>`;
   $('#modalBg').classList.add('show');
 }
@@ -1842,6 +1842,24 @@ async function authSignUp(){const email=($('#au_email').value||'').trim(),pw=$('
     else{err.style.color='var(--teal)';err.textContent='Account created. Confirm via the email we sent, then sign in. An admin still needs to approve you.';err.style.display='block';}}
   catch(e){err.style.color='var(--red)';err.textContent='Sign-up failed';err.style.display='block';}}
 async function signOutAuth(){try{await sb.auth.signOut();}catch(e){}S.session=null;S.cloud=false;S.profile=null;showAuth();}
+/* ---------- web push opt-in ---------- */
+const SEAQUEST_VAPID=window.SEAQUEST_VAPID||'';
+function urlB64ToUint8(s){const pad='='.repeat((4-s.length%4)%4);const b64=(s+pad).replace(/-/g,'+').replace(/_/g,'/');const raw=atob(b64);return Uint8Array.from([...raw].map(c=>c.charCodeAt(0)));}
+async function enablePush(){
+  try{
+    if(!('serviceWorker' in navigator)||!('PushManager' in window)||!('Notification' in window)){toast('Notifications are not supported on this browser');return;}
+    if(!S.session){toast('Sign in first');return;}
+    const perm=await Notification.requestPermission();
+    if(perm!=='granted'){toast('Notifications blocked - allow them in your settings');return;}
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlB64ToUint8(SEAQUEST_VAPID)});
+    const j=sub.toJSON();
+    if(sb)await sb.from('push_subscriptions').upsert({user_id:S.session.user.id,endpoint:j.endpoint,p256dh:j.keys.p256dh,auth:j.keys.auth},{onConflict:'endpoint'});
+    try{localStorage.setItem('sq_push','on');}catch(e){}
+    toast('\u{1F514} Daily reminders on for this device');
+  }catch(e){toast('Could not turn on notifications');}
+}
 async function startApp(){
   loadRepNames(); S.me=getMe();
   await initCloud();

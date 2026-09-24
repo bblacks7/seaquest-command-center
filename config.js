@@ -6,6 +6,8 @@ window.SEAQUEST_CONFIG = {
   url: "https://cznfungtwxmtzykemgls.supabase.co",
   anonKey: "sb_publishable_777hUvvUTV-0GistG6c0LQ_UduEW6mt" // publishable key - safe in a frontend
 };
+// Web-push public key (safe to expose). Private key lives only in Supabase.
+window.SEAQUEST_VAPID = "BI9vD8ZfjNhiamTYc3B7CgFRB_WT9UryABFroIF1xp9CvnlgoBEaJZ23QyBBxMTOzyH6fhCvvQo8-QTMjizQbIk";
 
 // ---- Industry sectors we sell into (share of a territory's target pool) ----
 window.SEAQUEST_INDUSTRIES = [
