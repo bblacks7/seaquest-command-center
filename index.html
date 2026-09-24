@@ -282,6 +282,26 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
     <button class="btn adv" style="width:100%;margin-top:14px;padding:12px" onclick="gateTry()">Enter</button>
   </div>
 </div>
+<div id="authgate" style="position:fixed;inset:0;z-index:210;background:var(--bg);display:none;align-items:center;justify-content:center;padding:24px">
+  <div style="max-width:360px;width:100%;text-align:center">
+    <div style="width:56px;height:56px;border-radius:16px;margin:0 auto 14px;background:linear-gradient(135deg,var(--teal),var(--blue));display:grid;place-items:center;color:#04121a;font-weight:900;font-size:26px;box-shadow:0 0 22px rgba(0,224,164,.4)">S</div>
+    <div style="font-weight:900;font-size:20px">SeaQuest Command Center</div>
+    <div id="auth_sub" style="font-size:13px;color:var(--dim);margin-top:6px">Sign in to your account</div>
+    <div id="auth_form">
+      <input id="au_email" type="email" placeholder="Email" autocomplete="username" style="width:100%;margin-top:16px;background:var(--bg2);border:1px solid var(--line);color:var(--tx);padding:13px;border-radius:12px;font-size:15px">
+      <input id="au_pw" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-top:10px;background:var(--bg2);border:1px solid var(--line);color:var(--tx);padding:13px;border-radius:12px;font-size:15px" onkeydown="if(event.key==='Enter')authSignIn()">
+      <div id="au_err" style="font-size:12px;margin-top:8px;display:none"></div>
+      <button class="btn adv" style="width:100%;margin-top:14px;padding:12px" onclick="authSignIn()">Sign in</button>
+      <button class="btn" style="width:100%;margin-top:8px;padding:12px" onclick="authSignUp()">Create account (needs approval)</button>
+    </div>
+    <div id="auth_pending" style="display:none;margin-top:18px">
+      <div style="font-size:40px">⏳</div>
+      <div style="font-weight:800;font-size:16px;margin-top:8px">Pending approval</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:6px">Your account was created. An admin needs to approve you before you can get in.</div>
+      <button class="btn" style="width:100%;margin-top:14px" onclick="signOutAuth()">Sign out</button>
+    </div>
+  </div>
+</div>
 <button class="fab" id="fab" title="Add company">+</button>
 <div id="toast"></div>
 <div id="tour"></div>
@@ -337,7 +357,7 @@ const RANKS=[
 
 let sb=null;
 const S={view:'command',companies:[],cloud:false,session:null,me:REPS[0].id,
-  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, tour:{on:false,i:0}, qp:{industry:null,scope:'me',idx:0}, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
+  terr:null, terrTab:'all', terrSector:null, hitAll:false, repId:null, profile:null, tour:{on:false,i:0}, qp:{industry:null,scope:'me',idx:0}, filter:{terr:null,industry:null,stage:null,owner:null,q:''}};
 
 /* ---------- helpers ---------- */
 const $=s=>document.querySelector(s);
@@ -590,8 +610,24 @@ function render(){ renderConsole(); renderNav();
   else if(v==='academy')viewAcademy();
   else if(v==='links')viewLinks();
   else if(v==='manager')viewManager();
+  else if(v==='approvals')viewApprovals();
   else if(v==='rep')viewRep();
 }
+async function loadApprovals(){try{const {data}=await sb.from('profiles').select('*').order('created_at');return data||[];}catch(e){return [];}}
+function viewApprovals(){
+  $('#app').innerHTML=`<div class="crumb" onclick="openMenu()">&#9776; Menu</div><h2 class="sec" style="margin-top:8px"><span class="dot"></span>Team Approvals</h2><div class="empty">Loading...</div>`;
+  loadApprovals().then(list=>{
+    const uid=S.session&&S.session.user?S.session.user.id:'';
+    const pending=list.filter(p=>!p.approved),approved=list.filter(p=>p.approved);
+    let h=`<div class="crumb" onclick="openMenu()">&#9776; Menu</div><h2 class="sec" style="margin-top:8px"><span class="dot"></span>Team Approvals</h2>
+    <div style="font-size:12px;color:var(--dim);margin:-4px 4px 10px">Approve new signups to grant access. Revoke to cut someone off.</div>`;
+    h+=`<h2 class="sec"><span class="dot"></span>Pending (${pending.length})</h2>`;
+    h+= pending.length? `<div class="grid" style="gap:8px">`+pending.map(p=>`<div class="rep"><div class="info"><div class="rn">${esc(p.email||p.id)}</div><div class="rm">signed up ${p.created_at?timeAgo(new Date(p.created_at).getTime()):''}</div></div><button class="btn adv sm" onclick="approveUser('${p.id}',true)">Approve</button></div>`).join('')+`</div>` : `<div class="empty">No one waiting.</div>`;
+    h+=`<h2 class="sec"><span class="dot"></span>Approved (${approved.length})</h2><div class="grid" style="gap:8px">`+approved.map(p=>`<div class="rep"><div class="info"><div class="rn">${esc(p.email||p.id)} ${p.is_admin?'<span class="youtag">ADMIN</span>':''}</div></div>${p.id===uid?'':`<button class="btn rej sm" onclick="approveUser('${p.id}',false)">Revoke</button>`}</div>`).join('')+`</div>`;
+    $('#app').innerHTML=h;
+  });
+}
+async function approveUser(id,val){try{await sb.from('profiles').update({approved:val}).eq('id',id);toast(val?'✅ Approved':'Revoked');viewApprovals();}catch(e){toast('Update failed');}}
 function openMenu(){
   const me=REP_BY_ID[S.me]||REPS[0];
   const grp=(title,items)=>`<div class="menu-grp">${title}</div>`+items.map(it=>`<div class="menu-item" onclick="${it.onclick}">${it.icon} <span>${it.label}</span></div>`).join('');
@@ -600,7 +636,7 @@ function openMenu(){
    ${grp('Work',[{icon:'\u{1F3E0}',label:'HQ',onclick:"menuGo('command')"},{icon:'⚡',label:'Quick Play',onclick:"menuGo('quickplay')"},{icon:'\u{1F3AF}',label:'Hit List',onclick:"menuGo('hitlist')"}])}
    ${grp('Grow',[{icon:'✨',label:'Research',onclick:"menuGo('research')"},{icon:'\u{1F393}',label:'Academy',onclick:"menuGo('academy')"}])}
    ${grp('Map & Data',[{icon:'\u{1F5FA}️',label:'War Map',onclick:"menuGo('map')"},{icon:'\u{1F4CB}',label:'Pipeline',onclick:"menuGo('pipeline')"},{icon:'\u{1F4CA}',label:'Sectors',onclick:"menuGo('sectors')"}])}
-   ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F4C8}',label:'Manager dashboard',onclick:"menuGo('manager')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}])}
+   ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F4C8}',label:'Manager dashboard',onclick:"menuGo('manager')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}].concat((S.profile&&S.profile.is_admin)?[{icon:'✅',label:'Approvals (admin)',onclick:"menuGo('approvals')"}]:[]))}
    ${grp('Resources',[{icon:'\u{1F517}',label:'Links & tools',onclick:"menuGo('links')"}])}
    ${grp('Setup & Help',[{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'☁️',label:'Cloud sync',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
    <div style="display:flex;gap:8px;margin-top:16px"><button class="btn" onclick="closeModal()">Close</button></div>`;
@@ -1779,11 +1815,33 @@ $('#fab').onclick=openAdd;
 $('#menuBtn').onclick=openMenu;
 $('#cloudChip').onclick=openCloud;
 $('#modalBg').onclick=e=>{if(e.target===$('#modalBg'))closeModal();};
-const GATE_HASH="5826fd04aa183c5d73d6949ebc62542da823d3a0edfec29a5d68238a40732471";
-async function sha256hex(s){const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(s));return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');}
-function gateOk(){try{return !GATE_HASH||localStorage.getItem('sq_gate')===GATE_HASH;}catch(e){return !GATE_HASH;}}
-async function gateTry(){const v=($('#gate_pw')||{}).value||'';let hx='';try{hx=await sha256hex(v);}catch(e){}if(hx===GATE_HASH){try{localStorage.setItem('sq_gate',GATE_HASH);}catch(e){}const g=$('#gate');if(g)g.style.display='none';startApp();}else{const e2=$('#gate_err');if(e2)e2.style.display='block';}}
-function showGate(){const g=$('#gate');if(g){g.style.display='flex';setTimeout(()=>{const p=$('#gate_pw');if(p)p.focus();},60);}}
+/* ---------- auth gate: login + approval ---------- */
+function showAuth(msg){const g=$('#authgate');if(!g)return;g.style.display='flex';$('#auth_form').style.display='block';$('#auth_pending').style.display='none';$('#auth_sub').textContent=msg||'Sign in to your account';const e=$('#au_err');if(msg){e.style.color='var(--red)';e.textContent='';}}
+function hideAuth(){const g=$('#authgate');if(g)g.style.display='none';}
+function showPending(){const g=$('#authgate');if(!g)return;g.style.display='flex';$('#auth_form').style.display='none';$('#auth_pending').style.display='block';$('#auth_sub').textContent='Almost there';}
+async function fetchProfile(){
+  try{const uid=S.session.user.id;
+    let r=await sb.from('profiles').select('*').eq('id',uid).maybeSingle();
+    if(!r.data){ try{await sb.from('profiles').insert({id:uid,email:S.session.user.email});}catch(e){} r=await sb.from('profiles').select('*').eq('id',uid).maybeSingle(); }
+    return r.data||null;
+  }catch(e){return null;}
+}
+async function afterLogin(){const prof=await fetchProfile();S.profile=prof;if(prof&&prof.approved){hideAuth();startApp();}else{showPending();}}
+async function authBoot(){
+  await initCloud();
+  if(!sb){showAuth("Can't reach the server. Check your connection and reload.");return;}
+  if(S.session){await afterLogin();}else{showAuth();}
+}
+async function authSignIn(){const email=($('#au_email').value||'').trim(),pw=$('#au_pw').value,err=$('#au_err');err.style.display='none';if(!sb)return;
+  try{const {data,error}=await sb.auth.signInWithPassword({email,password:pw});if(error){err.style.color='var(--red)';err.textContent=error.message;err.style.display='block';return;}S.session=data.session;S.cloud=true;await afterLogin();}
+  catch(e){err.style.color='var(--red)';err.textContent='Sign-in failed';err.style.display='block';}}
+async function authSignUp(){const email=($('#au_email').value||'').trim(),pw=$('#au_pw').value,err=$('#au_err');err.style.display='none';
+  if(!email||pw.length<6){err.style.color='var(--red)';err.textContent='Enter an email and a password of at least 6 characters.';err.style.display='block';return;}
+  try{const {data,error}=await sb.auth.signUp({email,password:pw});if(error){err.style.color='var(--red)';err.textContent=error.message;err.style.display='block';return;}
+    if(data&&data.session){S.session=data.session;S.cloud=true;await fetchProfile();showPending();}
+    else{err.style.color='var(--teal)';err.textContent='Account created. Confirm via the email we sent, then sign in. An admin still needs to approve you.';err.style.display='block';}}
+  catch(e){err.style.color='var(--red)';err.textContent='Sign-up failed';err.style.display='block';}}
+async function signOutAuth(){try{await sb.auth.signOut();}catch(e){}S.session=null;S.cloud=false;S.profile=null;showAuth();}
 async function startApp(){
   loadRepNames(); S.me=getMe();
   await initCloud();
@@ -1798,7 +1856,7 @@ async function startApp(){
     if(!$('#modalBg').classList.contains('show')&&['map','quickplay','hitlist','command'].indexOf(S.view)>=0)render();
   },60000);
 }
-if(gateOk())startApp();else showGate();
+authBoot();
 </script>
 </body>
 </html>
