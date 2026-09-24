@@ -231,6 +231,19 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 #tour .tdots{flex:1;display:flex;gap:5px}
 #tour .tdots i{width:6px;height:6px;border-radius:50%;background:var(--line)}
 #tour .tdots i.on{background:var(--teal);box-shadow:0 0 6px var(--teal)}
+/* academy slides */
+.slide-pt{display:flex;gap:9px;margin:10px 0;font-size:14px;line-height:1.5}
+.slide-pt .ar{color:var(--teal);font-weight:900;flex:0 0 auto}
+.ex-box{margin-top:14px;background:var(--bg2);border:1px solid var(--line);border-radius:12px;padding:12px}
+.ex-label{font-size:10px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--dim2);margin:2px 0 6px}
+.ex-label.good{color:var(--green)}.ex-label.bad{color:var(--red)}
+.ex-script{font-size:14px;line-height:1.5;color:var(--tx);font-style:italic;border-left:3px solid var(--teal);padding-left:10px}
+.ex-good{font-size:13px;color:#bdeed7;margin:4px 0;display:flex;gap:7px}
+.ex-bad{font-size:13px;color:#ffc4c4;margin:4px 0;display:flex;gap:7px}
+.ex-note{font-size:12px;color:var(--dim);margin-top:4px}
+.slidebar{display:flex;gap:5px;margin:4px 0 2px}
+.slidebar i{flex:1;height:4px;border-radius:3px;background:var(--line)}
+.slidebar i.on{background:var(--gold)}
 @media(max-width:640px){
   .g4{grid-template-columns:1fr 1fr}.g3{grid-template-columns:1fr}
   .maprow{gap:3px}.tile .ab{font-size:9px}
@@ -267,6 +280,7 @@ h2.sec .dot{width:6px;height:6px;border-radius:50%;background:var(--teal);box-sh
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="config.js"></script>
 <script src="data.js"></script>
+<script src="academy.js"></script>
 <script>
 /* ============================ SeaQuest Command Center ============================ */
 const CFG=window.SEAQUEST_CONFIG||{};
@@ -641,7 +655,7 @@ function viewAcademy(){
       h+=`<div class="rep" style="cursor:pointer" onclick="openModule('${m.id}')">
         <div class="ava" style="width:44px;height:44px;border-color:${d?'var(--gold)':'var(--line)'};font-size:22px">${m.icon}</div>
         <div class="info"><div class="rn">${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</div>
-          <div class="rm">${m.points.length} key points &middot; ${m.quiz.length}-question check &middot; +${m.xp} XP</div></div>
+          <div class="rm">${(m.slides?m.slides.length:0)} slides &middot; ${m.quiz.length}-question check &middot; +${m.xp} XP</div></div>
         <button class="mini-btn ${d?'':'on'}" onclick="event.stopPropagation();openModule('${m.id}')">${d?'Review':'Start'}</button>
       </div>`;});
     h+=`</div>`;});
@@ -649,16 +663,39 @@ function viewAcademy(){
     +ACADEMY.map(m=>{const d=trainDone(me.id,m.id);return `<div class="badge2 ${d?'':'lock'}"><div class="bi">${m.badge.i}</div><div><div class="bt">${esc(m.badge.t)}</div><div class="bd">${esc(m.title)}</div></div></div>`;}).join('')+`</div>`;
   $('#app').innerHTML=h;
 }
-function openModule(id){
+function openModule(id){S.modI=0;renderModule(id);}
+function modNav(id,dir){const m=ACADEMY.find(x=>x.id===id);if(!m)return;const total=(m.slides?m.slides.length:0)+1;S.modI=Math.max(0,Math.min(total-1,(S.modI||0)+dir));renderModule(id);}
+function exampleBox(ex){
+  let h='<div class="ex-box">';
+  if(ex.script)h+=`<div class="ex-label">Example script</div><div class="ex-script">"${esc(ex.script)}"</div>`;
+  if(ex.good&&ex.good.length)h+=`<div class="ex-label good" style="margin-top:${ex.script?'10px':'2px'}">Do / say this</div>`+ex.good.map(g=>`<div class="ex-good">✓ ${esc(g)}</div>`).join('');
+  if(ex.bad&&ex.bad.length)h+=`<div class="ex-label bad" style="margin-top:10px">Not this</div>`+ex.bad.map(b=>`<div class="ex-bad">✗ ${esc(b)}</div>`).join('');
+  if(ex.note)h+=`<div class="ex-note" style="margin-top:${(ex.script||ex.good||ex.bad)?'10px':'2px'}">\u{1F4A1} ${esc(ex.note)}</div>`;
+  return h+'</div>';
+}
+function renderModule(id){
   const m=ACADEMY.find(x=>x.id===id);if(!m)return;const me=REP_BY_ID[S.me]||REPS[0];const d=trainDone(me.id,id);
-  const md=$('#modal');
-  md.innerHTML=`<h3>${m.icon} ${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</h3>
-    <div style="font-size:13px;line-height:1.5;color:var(--tx);margin-top:4px">${m.points.map(p=>`<div style="display:flex;gap:9px;margin:9px 0"><span style="color:var(--teal);font-weight:900">▸</span><span>${esc(p)}</span></div>`).join('')}</div>
-    <div style="font-weight:800;font-size:13px;margin-top:16px;color:var(--gold)">Quick check</div>
-    <div id="quiz">${m.quiz.map((q,qi)=>`<div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--tx);font-size:13px;font-weight:700">${qi+1}. ${esc(q.q)}</label>
-      ${q.a.map((opt,oi)=>`<label style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;cursor:pointer"><input type="radio" name="q${qi}" value="${oi}" style="width:auto;margin:0"> <span>${esc(opt)}</span></label>`).join('')}</div>`).join('')}</div>
-    <div id="quizMsg" style="font-size:12px;margin-top:10px;min-height:16px"></div>
-    <div style="display:flex;gap:8px;margin-top:12px"><button class="btn" onclick="closeModal()">Close</button><button class="btn adv" onclick="submitModule('${id}')">${d?'Check again':'Complete training'}</button></div>`;
+  const slides=m.slides||[];const total=slides.length+1;const i=Math.min(S.modI||0,total-1);
+  const bar=`<div class="slidebar">${Array.from({length:total}).map((_,k)=>`<i class="${k<=i?'on':''}"></i>`).join('')}</div>`;
+  let body;
+  if(i<slides.length){
+    const s=slides[i];
+    body=`<div class="tstep">Slide ${i+1} of ${slides.length}</div><h4 style="margin:6px 0 4px;font-size:17px">${esc(s.t)}</h4>
+      ${(s.b||[]).map(p=>`<div class="slide-pt"><span class="ar">▸</span><span>${esc(p)}</span></div>`).join('')}
+      ${s.ex?exampleBox(s.ex):''}
+      <div style="display:flex;gap:8px;margin-top:16px">
+        <button class="btn" onclick="closeModal()">Close</button>
+        ${i>0?`<button class="btn sm" onclick="modNav('${id}',-1)">Back</button>`:''}
+        <button class="btn adv" onclick="modNav('${id}',1)">${i<slides.length-1?'Next':'Take the check'}</button></div>`;
+  } else {
+    body=`<div style="font-weight:800;font-size:14px;color:var(--gold)">Knowledge check</div>
+      <div id="quiz">${m.quiz.map((q,qi)=>`<div class="field"><label style="text-transform:none;letter-spacing:0;color:var(--tx);font-size:13px;font-weight:700">${qi+1}. ${esc(q.q)}</label>
+        ${q.a.map((opt,oi)=>`<label style="display:flex;align-items:center;gap:9px;padding:9px 10px;border:1px solid var(--line);border-radius:10px;margin-top:6px;cursor:pointer"><input type="radio" name="q${qi}" value="${oi}" style="width:auto;margin:0"> <span>${esc(opt)}</span></label>`).join('')}</div>`).join('')}</div>
+      <div id="quizMsg" style="font-size:12px;margin-top:10px;min-height:16px"></div>
+      <div style="display:flex;gap:8px;margin-top:12px"><button class="btn sm" onclick="modNav('${id}',-1)">Back</button><button class="btn adv" onclick="submitModule('${id}')">${d?'Check again':'Complete & earn badge'}</button></div>`;
+  }
+  $('#modal').innerHTML=`<h3>${m.icon} ${esc(m.title)} ${d?'<span class="youtag" style="background:var(--gold);color:#3a2a00">DONE</span>':''}</h3>${bar}${body}`;
+  $('#modal').scrollTop=0;
   $('#modalBg').classList.add('show');
 }
 function submitModule(id){
