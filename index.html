@@ -1557,7 +1557,17 @@ async function doSignOut(){try{await sb.auth.signOut();}catch(e){}S.cloud=false;
 
 /* ---------- clipboard / claude ---------- */
 function copyText(t){try{navigator.clipboard.writeText(t);}catch(e){try{const a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}catch(e2){}}}
-function askClaude(prompt){copyText(prompt);try{window.open('https://claude.ai/new','_blank');}catch(e){}toast('✨ Prompt copied - paste into Claude');}
+function askClaude(prompt){
+  copyText(prompt);                                   // always copy full text as a fallback
+  var url='https://claude.ai/new';
+  if(prompt){var q=encodeURIComponent(prompt);if(q.length<=6000)url+='?q='+q;} // prefill the box
+  // Open as a real link so iOS/Android route to the installed Claude app (universal link);
+  // falls back to claude.ai in the browser (already signed in) if the app isn't installed.
+  var opened=false;
+  try{var a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';document.body.appendChild(a);a.click();a.remove();opened=true;}catch(e){}
+  if(!opened){try{window.open(url,'_blank');}catch(e){}}
+  toast("✨ Opening Claude with your prompt - if the box is empty, just paste (it's copied)");
+}
 
 /* ---------- email templates ---------- */
 const EMAIL_TPLS=[
