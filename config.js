@@ -45,8 +45,8 @@ window.SEAQUEST_FRONTIER = [
 // ---- Your squad: you + reps. Each levels up from the accounts they own. ----
 // Rename freely (or tap a name in the app to rename). id must stay unique & stable.
 window.SEAQUEST_REPS = [
-  { id:"brandon", name:"Brandon", role:"Commander",  market:"US / National",      emoji:"⭐", color:"#ffd23f" },
-  { id:"xiaoke",  name:"Xiaoke",  role:"Field Rep",  market:"APAC / Sourcing",    emoji:"\u{1F409}", color:"#ff7a45" },
+  { id:"brandon", name:"Brandon", role:"Commander",  market:"US / National",      emoji:"⭐", color:"#ffd23f", email:"brandon@seaquest-global.com" },
+  { id:"xiaoke",  name:"Xiaoke",  role:"Field Rep",  market:"APAC / Sourcing",    emoji:"\u{1F409}", color:"#ff7a45", email:"xiaoke@seaquest-global.com" },
   { id:"mx",      name:"Mexico Rep", role:"Field Rep", market:"Mexico / LatAm",   emoji:"\u{1F32E}", color:"#22c58b" },
   { id:"eu",      name:"EU Rep",   role:"Field Rep", market:"EU / UK",            emoji:"\u{1F1EA}\u{1F1FA}", color:"#2f80ed" }
 ];

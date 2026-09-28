@@ -1584,9 +1584,9 @@ const EMAIL_TPLS=[
   {id:'referral',label:'Referred / warm intro',subject:'[Referrer] suggested I reach out',
    body:"Hi [Name],\n\n[Referrer] pointed me your way. I'm [Rep] with SeaQuest Global, we run our own paper factories and supply custom bags and boxes. Could I send a quick quote for [Company]?\n\n[Rep]"},
   {id:'voicemail',label:'Voicemail / call script',subject:'',
-   body:"Hi [Name], this is [Rep] with SeaQuest Global, a veteran owned paper packaging company. We help brands like [Company] source custom bags and boxes from our own factories. You can reach me at [your number], and I'll follow up by email too. Thanks!"}
+   body:"Hi [Name], this is [Rep] with SeaQuest Global, a veteran owned paper packaging company. We help brands like [Company] source custom bags and boxes from our own factories. I'll follow up by email too, and you can call me back at this number any time. Thanks!"}
 ];
-function fillTpl(str,c,rep){return String(str).replace(/\[Name\]/g,c.contact||'there').replace(/\[Company\]/g,c.name||'your company').replace(/\[Rep\]/g,rep.name).replace(/\[Title\]/g,c.title||'');}
+function fillTpl(str,c,rep){return String(str).replace(/\[Name\]/g,c.contact||'there').replace(/\[Company\]/g,c.name||'your company').replace(/\[Rep\]/g,rep.name).replace(/\[Title\]/g,c.title||'').replace(/\[Referrer\]/g,'A mutual contact');}
 function trackCall(i){const c=S.companies[i];if(!c)return;bumpStat(S.me,'calls');logAct('Called '+c.name);addCallLog(c.name,{outcome:'dialed'});}
 function openEmail(idx){
   const c=S.companies[idx];if(!c)return;const rep=REP_BY_ID[S.me]||REPS[0];
@@ -1875,8 +1875,13 @@ async function enablePush(){
     toast('\u{1F514} Daily reminders on for this device');
   }catch(e){toast('Could not turn on notifications');}
 }
+function repIdForEmail(email){if(!email)return null;email=String(email).toLowerCase();const r=REPS.find(x=>(x.email||'').toLowerCase()===email);return r?r.id:null;}
 async function startApp(){
-  loadRepNames(); S.me=getMe();
+  loadRepNames();
+  // Link the signed-in email to its rep so research/emails credit the right person and they see their own book.
+  const mapped=repIdForEmail(S.profile&&S.profile.email);
+  if(mapped){S.me=mapped;try{localStorage.setItem('sq_me',mapped);}catch(e){}}
+  else{S.me=getMe();}
   await initCloud();
   await reload();
   render();
