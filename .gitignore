@@ -8,3 +8,8 @@ desktop.ini
 # The Supabase service_role key must NEVER live in this repo.
 .env
 *.secret
+
+# Freight Desk: contact data (emails/phones) must NEVER live in the public repo.
+# The seed SQL is generated locally and pasted into the Supabase SQL editor only.
+freight_seed.sql
+freight_research_*.json

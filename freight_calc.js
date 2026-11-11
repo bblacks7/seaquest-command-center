@@ -27,24 +27,47 @@
     return num(rfq.unit_count) * num(rfq.product_unit_cost);
   }
 
-  // Import duty amount = product value * duty% (duty applied to cargo value).
+  // US import duty amount. For US entries, duty is assessed on the customs/transaction
+  // (FOB) value and EXCLUDES international freight & insurance — unlike the CIF basis most
+  // other countries use. So duty = productValue(FOB) * duty%. (Best-practice verified.)
   function dutyAmount(rfq){
     return productValue(rfq) * (num(rfq && rfq.duty_pct) / 100);
   }
 
+  // US entry fees that apply to virtually every formal ocean entry, on top of duty:
+  //   MPF (Merchandise Processing Fee): ad valorem on cargo value, with a min and max per entry.
+  //   HMF (Harbor Maintenance Fee): flat ad valorem on cargo value (ocean imports only).
+  // Rates below are indicative — VERIFY against CBP annually (they adjust ~each October).
+  // Set rfq.us_entry_fees === false to exclude (e.g. informal entry, or fees quoted elsewhere).
+  const US_FEES = { MPF_RATE:0.003464, MPF_MIN:32.71, MPF_MAX:634.62, HMF_RATE:0.00125 };
+  function entryFees(rfq){
+    if(!rfq || rfq.us_entry_fees === false) return { mpf:0, hmf:0, total:0 };
+    const val = productValue(rfq);
+    if(val <= 0) return { mpf:0, hmf:0, total:0 };
+    let mpf = val * US_FEES.MPF_RATE;
+    if(mpf < US_FEES.MPF_MIN) mpf = US_FEES.MPF_MIN;
+    if(mpf > US_FEES.MPF_MAX) mpf = US_FEES.MPF_MAX;
+    const hmf = val * US_FEES.HMF_RATE;
+    return { mpf: round2(mpf), hmf: round2(hmf), total: round2(mpf + hmf) };
+  }
+
   // Full landed cost of a shipment for a given RFQ + one quote.
-  // landedTotal = productValue + duty + freight.  perUnit = landedTotal / units.
+  // landedTotal = productValue + duty + US entry fees (MPF+HMF) + freight.  perUnit = landedTotal / units.
   function landedCost(rfq, quote){
     const freight = quoteTotal(quote);
     const prod = productValue(rfq);
     const duty = dutyAmount(rfq);
-    const total = prod + duty + freight;
+    const fees = entryFees(rfq);
+    const total = prod + duty + fees.total + freight;
     const units = num(rfq && rfq.unit_count);
     const perUnit = units > 0 ? total / units : 0;
     return {
       freight: round2(freight),
       productValue: round2(prod),
       duty: round2(duty),
+      mpf: fees.mpf,
+      hmf: fees.hmf,
+      entryFees: fees.total,
       total: round2(total),
       perUnit: round4(perUnit),
       units: units
@@ -119,7 +142,7 @@
   const API = {
     num: num, round2: round2,
     lineItemsTotal: lineItemsTotal, quoteTotal: quoteTotal,
-    productValue: productValue, dutyAmount: dutyAmount,
+    productValue: productValue, dutyAmount: dutyAmount, entryFees: entryFees,
     landedCost: landedCost, quoteExpiry: quoteExpiry,
     rankByLanded: rankByLanded, cmpMatrix: cmpMatrix
   };

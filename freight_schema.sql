@@ -46,7 +46,8 @@ create table if not exists freight_rfqs (
   services       text[] default '{}',
   unit_count     numeric,                     -- units in the shipment, for landed-cost/unit
   product_unit_cost numeric,                  -- FOB product cost per unit (for landed cost)
-  duty_pct       numeric default 0,           -- import duty % applied to product value
+  duty_pct       numeric default 0,           -- import duty % applied to FOB product value (US basis)
+  us_entry_fees  boolean default true,         -- include MPF+HMF estimate in landed cost
   notes          text,
   status         text default 'draft',        -- draft | sent | quoting | decided
   created_by     uuid default auth.uid(),
@@ -95,3 +96,29 @@ create index if not exists freight_contacts_provider_idx on freight_contacts(pro
 create index if not exists freight_quotes_rfq_idx on freight_quotes(rfq_id);
 create index if not exists freight_sends_rfq_idx on freight_rfq_sends(rfq_id);
 create index if not exists freight_providers_type_idx on freight_providers(type);
+
+-- ============================================================================
+-- SECURITY VERIFICATION (run these after applying; from the security audit).
+-- The page (freight.html) is PUBLIC and the anon key is meant to be public — the
+-- ONLY thing protecting contact data is RLS below. Confirm all of the following:
+--
+-- 1) RLS is ON for every freight table (must all return true):
+--      select relname, relrowsecurity from pg_class
+--      where relname like 'freight_%';
+--
+-- 2) is_approved() is a hardened SECURITY DEFINER with a pinned search_path.
+--    If not already set by the CRM, run (adjust body to your schema):
+--      alter function public.is_approved() set search_path = '';
+--    and make sure its body uses auth.uid() and fully-qualified table names.
+--
+-- 3) A signed-in but UNAPPROVED user must get zero rows / failed writes. Test with
+--    that user's JWT (never service_role):  select * from freight_contacts;  -> []
+--
+-- 4) profiles.approved must NOT be self-writable — confirm no RLS policy lets a user
+--    UPDATE their own profiles.approved to true (else self-approval bypasses this).
+--
+-- 5) service_role key must NEVER appear in freight.html / config.js / the repo.
+--
+-- 6) In the dashboard: enable leaked-password protection, keep auth rate limits on,
+--    and limit PostgREST "Exposed schemas" to what you actually need.
+-- ============================================================================

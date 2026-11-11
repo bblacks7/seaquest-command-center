@@ -50,17 +50,32 @@ eq('productValue = units * unit cost', FC.productValue(rfq), 2500);
 eq('dutyAmount 0%% = 0', FC.dutyAmount(rfq), 0);
 approx('dutyAmount 6%% of 2500 = 150', FC.dutyAmount(rfqDuty), 150);
 
-// ---- landed cost ----
+// ---- US entry fees (MPF + HMF) ----
+const EF = FC.entryFees(rfq);                                   // cargo value 2500
+eq('entryFees.mpf hits MPF minimum ($32.71)', EF.mpf, 32.71);   // 2500*0.3464%=8.66 -> min
+eq('entryFees.hmf = 0.125%% of 2500', EF.hmf, 3.13);
+eq('entryFees.total = mpf+hmf', EF.total, 35.84);
+const EFbig = FC.entryFees({unit_count:100000, product_unit_cost:1}); // value 100,000
+approx('entryFees MPF ad valorem above min', EFbig.mpf, 346.4); // 100000*0.3464%
+eq('entryFees HMF scales', EFbig.hmf, 125);
+const EFmax = FC.entryFees({unit_count:100000000, product_unit_cost:1});
+eq('entryFees MPF caps at max ($634.62)', EFmax.mpf, 634.62);
+eq('entryFees disabled via us_entry_fees:false', FC.entryFees({unit_count:10000, product_unit_cost:0.25, us_entry_fees:false}).total, 0);
+eq('entryFees zero when no cargo value', FC.entryFees({unit_count:0, product_unit_cost:1}).total, 0);
+
+// ---- landed cost (cargo + duty + MPF + HMF + freight) ----
 const L = FC.landedCost(rfq, {total:4000});
 eq('landed.freight', L.freight, 4000);
 eq('landed.productValue', L.productValue, 2500);
-eq('landed.total = cargo+duty+freight', L.total, 6500);
-approx('landed.perUnit = 6500/10000', L.perUnit, 0.65);
+eq('landed.entryFees surfaced', L.entryFees, 35.84);
+eq('landed.total = cargo+duty+fees+freight', L.total, 6535.84);  // 2500+0+35.84+4000
+approx('landed.perUnit = 6535.84/10000', L.perUnit, 0.653584);
 const L2 = FC.landedCost(rfqDuty, {total:4000});
-eq('landed.total with 6%% duty', L2.total, 6650);               // 2500 + 150 + 4000
-approx('landed.perUnit with duty', L2.perUnit, 0.665);
+eq('landed.total with 6%% duty + fees', L2.total, 6685.84);      // 2500+150+35.84+4000
+approx('landed.perUnit with duty + fees', L2.perUnit, 0.668584);
 const L3 = FC.landedCost({unit_count:0, product_unit_cost:1}, {total:100});
 eq('landed.perUnit guards divide-by-zero', L3.perUnit, 0);
+eq('landed with fees disabled = cargo+freight only', FC.landedCost({unit_count:10000, product_unit_cost:0.25, us_entry_fees:false}, {total:4000}).total, 6500);
 
 // ---- expiry ----
 eq('expiry none when no date', FC.quoteExpiry({}, '2026-11-11').status, 'none');
@@ -82,7 +97,7 @@ eq('rank: second', ranked[1].quote.id, 1);
 eq('rank: zero-freight sinks to bottom', ranked[2].quote.id, 3);
 eq('rank: cheapest flagged', ranked[0].isCheapest, true);
 eq('rank: non-cheapest not flagged', ranked[1].isCheapest, false);
-approx('rank: cheapest landed/unit = (2500+3900)/10000', ranked[0].landed.perUnit, 0.64);
+approx('rank: cheapest landed/unit incl fees', ranked[0].landed.perUnit, 0.643584); // (2500+35.84+3900)/10000
 eq('rank: expiring quote detected on winner', ranked[0].expiry.status, 'expiring');
 
 // ---- comparison matrix ----
@@ -92,7 +107,7 @@ eq('matrix: labels content', M.labels.join(','), 'Ocean,Drayage');
 eq('matrix: one column per quote', M.columns.length, 3);
 eq('matrix: cell lookup', M.columns[0].cells['Ocean'], 3500);
 eq('matrix: missing cell undefined', M.columns[2].cells['Ocean'], undefined);
-eq('matrix: landed computed per column', M.columns[1].landed.total, 6400); // 2500+0+3900
+eq('matrix: landed computed per column', M.columns[1].landed.total, 6435.84); // 2500+0+35.84+3900
 
 // ---- summary ----
 const s=document.querySelector('#summary');

@@ -98,6 +98,8 @@ const CFG=window.SEAQUEST_CONFIG||{};
 let sb=null, PROFILE=null, PROVIDERS=[], CONTACTS={};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+// Only allow http(s) links from stored data — blocks javascript:/data: hrefs (stored-XSS guard).
+const safeUrl=u=>{ u=String(u==null?'':u).trim(); return /^https?:\/\//i.test(u)?u:''; };
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
 function closeModal(){$('#bg').classList.remove('show');}
 function openModal(html){$('#modal').innerHTML=html;$('#bg').classList.add('show');}
@@ -124,7 +126,9 @@ async function doLogin(){
   }catch(e){ err.textContent='Sign-in failed'; err.style.display='block'; }
 }
 async function afterLogin(){
+  // getUser() validates the JWT with the server (getSession() only reads local storage).
   const {data:{user}}=await sb.auth.getUser();
+  if(!user){ document.getElementById('gate').style.display='block'; document.getElementById('app').hidden=true; return; }
   let {data:prof}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
   PROFILE=prof;
   if(!prof||!prof.approved){
@@ -178,7 +182,7 @@ function renderDirectory(){
   rows.forEach(p=>{
     const cc=(CONTACTS[p.id]||[]).length;
     h+=`<tr>
-      <td><b>${esc(p.name)}</b>${p.website?`<br><a href="${esc(p.website)}" target="_blank" class="muted">${esc((p.website||'').replace(/^https?:\/\//,''))}</a>`:''}${p.license_no?`<br><span class="muted">Lic: ${esc(p.license_no)}</span>`:''}</td>
+      <td><b>${esc(p.name)}</b>${safeUrl(p.website)?`<br><a href="${esc(safeUrl(p.website))}" target="_blank" rel="noopener noreferrer" class="muted">${esc((p.website||'').replace(/^https?:\/\//,''))}</a>`:''}${p.license_no?`<br><span class="muted">Lic: ${esc(p.license_no)}</span>`:''}</td>
       <td>${typeLabel(p.type)}</td>
       <td>${(p.lanes||[]).map(l=>`<span class="tag">${esc(laneLabel(l))}</span>`).join('')||'<span class="muted">—</span>'}</td>
       <td><span class="pill ${p.status}">${(p.status||'new').replace(/_/g,' ')}</span></td>
@@ -232,7 +236,7 @@ function viewContacts(pid){
       <b>${esc(c.name)||'(no name)'}</b> ${c.verified?'<span class="tag" style="color:var(--teal)">verified</span>':'<span class="tag" style="color:var(--gold)">unverified</span>'}
       <div class="muted">${esc(c.title)||''}</div>
       <div>${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:'<span class="muted">no email</span>'} ${c.phone?' · '+esc(c.phone):''}</div>
-      ${c.source_url?`<div class="muted">src: <a href="${esc(c.source_url)}" target="_blank">${esc((c.source_url||'').replace(/^https?:\/\//,'').slice(0,40))}</a> ${c.source_date?'('+esc(c.source_date)+')':''}</div>`:''}
+      ${safeUrl(c.source_url)?`<div class="muted">src: <a href="${esc(safeUrl(c.source_url))}" target="_blank" rel="noopener noreferrer">${esc((c.source_url||'').replace(/^https?:\/\//,'').slice(0,40))}</a> ${c.source_date?'('+esc(c.source_date)+')':''}</div>`:c.source_url?`<div class="muted">src: ${esc(c.source_url)} ${c.source_date?'('+esc(c.source_date)+')':''}</div>`:''}
       <div style="text-align:right"><button class="ghost sm" onclick="editContact(${pid},${c.id})">Edit</button></div></div>`).join(''):'<p class="muted">No contacts yet.</p>'}
     <div class="modal-actions"><button class="ghost" onclick="closeModal()">Close</button><button class="btn" onclick="editContact(${pid})">+ Add contact</button></div>`);
 }
@@ -332,9 +336,10 @@ function editRfq(id){
       <div class="field"><label>FOB product cost / unit ($)</label><input id="r_pcost" type="number" step="0.0001" value="${esc(r.product_unit_cost)}"></div>
     </div>
     <div class="row2">
-      <div class="field"><label>Import duty %</label><input id="r_duty" type="number" step="0.1" value="${r.duty_pct!=null?esc(r.duty_pct):0}"></div>
+      <div class="field"><label>Import duty % <span class="muted">(on FOB value)</span></label><input id="r_duty" type="number" step="0.1" value="${r.duty_pct!=null?esc(r.duty_pct):0}"></div>
       <div class="field"><label>Status</label><select id="r_status">${['draft','sent','quoting','decided'].map(x=>`<option ${r.status===x?'selected':''}>${x}</option>`).join('')}</select></div>
     </div>
+    <label class="chk" style="margin-top:2px"><input type="checkbox" id="r_fees" ${r.us_entry_fees!==false?'checked':''}> Add US entry fees (MPF + HMF) to landed cost</label>
     <div class="field"><label>Notes</label><textarea id="r_notes">${esc(r.notes)}</textarea></div>
     <div class="modal-actions">${id?`<button class="btn rej sm" onclick="delRfq(${id})">Delete</button>`:''}<button class="ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveRfq(${id||0})">Save</button></div>`);
 }
@@ -346,7 +351,8 @@ async function saveRfq(id){
     hs_code:g('#r_hs').trim()||null, weight_kg:parseFloat(g('#r_wt'))||null, volume_cbm:parseFloat(g('#r_vol'))||null,
     services:[...document.querySelectorAll('.r_svc:checked')].map(x=>x.value),
     unit_count:parseFloat(g('#r_units'))||null, product_unit_cost:parseFloat(g('#r_pcost'))||null,
-    duty_pct:parseFloat(g('#r_duty'))||0, status:g('#r_status'), notes:g('#r_notes').trim()||null };
+    duty_pct:parseFloat(g('#r_duty'))||0, us_entry_fees:$('#r_fees')?$('#r_fees').checked:true,
+    status:g('#r_status'), notes:g('#r_notes').trim()||null };
   const q=id?sb.from('freight_rfqs').update(rec).eq('id',id):sb.from('freight_rfqs').insert(rec).select();
   const {data,error}=await q; if(error){toast('Save failed: '+error.message);return;}
   closeModal();toast('RFQ saved');await loadRfqs();
@@ -375,16 +381,23 @@ function specSheet(r){
   if(r.volume_cbm) L.push('Volume:           '+r.volume_cbm+' CBM');
   if(r.cargo_ready_date) L.push('Cargo ready:      '+r.cargo_ready_date);
   L.push('Services needed:  '+(svc.join(', ')||'Ocean freight'));
+  const cargoVal=FreightCalc.productValue(r);
+  if(cargoVal>0) L.push('Cargo value:      $'+cargoVal.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})+'  (for insurance / customs value)');
   L.push('');
-  L.push('Please quote:');
-  L.push('  1. All-in ocean freight '+(r.origin_port||'origin')+' -> '+(r.entry_port||'US port'));
-  if((r.services||[]).includes('customs')) L.push('  2. US customs clearance & entry');
-  if((r.services||[]).includes('drayage')) L.push('  3. Drayage / delivery to '+(r.final_destination||'final door'));
-  if((r.services||[]).includes('warehousing')) L.push('  4. Warehousing / 3PL receiving');
+  L.push('Please quote ITEMIZED and ALL-IN (mark any line "excluded" if not included):');
+  let n=1;
+  L.push('  '+(n++)+'. Ocean base '+(r.origin_port||'origin')+' -> '+(r.entry_port||'US port')+' + surcharges (BAF/CAF, GRI, PSS, ISPS)');
+  L.push('  '+(n++)+'. Origin + destination terminal handling (THC), documentation/BL');
+  if((r.services||[]).includes('customs')) L.push('  '+(n++)+'. US customs clearance & entry, incl. ISF filing (who files?)');
+  if((r.services||[]).includes('drayage')) L.push('  '+(n++)+'. Drayage to '+(r.final_destination||'final door')+', incl. chassis & fuel');
+  if((r.services||[]).includes('warehousing')) L.push('  '+(n++)+'. Warehousing / 3PL receiving');
+  L.push('');
+  L.push('Also confirm:');
   L.push('  -> Full landed/delivered cost to '+(r.final_destination||'final destination'));
   L.push('  -> Transit time (days, port to port and to door)');
   L.push('  -> Rate validity (quote good through date)');
-  L.push('  -> Payment terms + all surcharges (BAF/CAF, peak season, chassis, etc.)');
+  L.push('  -> Free time at destination + demurrage/detention (per-diem) daily rates');
+  L.push('  -> Payment terms, and any charges NOT included');
   if(r.notes){ L.push(''); L.push('Notes: '+r.notes); }
   L.push('');
   L.push('Please reply with your quotation. Thank you.');
@@ -473,7 +486,10 @@ async function renderCompare(){
   h+=`<tr><td>Transit (days)</td>`+M.columns.map(c=>`<td>${c.quote.transit_days!=null?esc(c.quote.transit_days):'<span class="muted">—</span>'}</td>`).join('')+'</tr>';
   h+=`<tr><td>Valid until</td>`+M.columns.map(c=>{const e=c.expiry;const col=e.status==='expired'?'var(--red)':e.status==='expiring'?'var(--gold)':'var(--dim)';return `<td style="color:${col}">${c.quote.valid_until?esc(c.quote.valid_until):'—'}</td>`;}).join('')+'</tr>';
   if(haveLanded){
-    h+=`<tr style="border-top:2px solid var(--line)"><td><b>Landed total</b><br><span class="muted">cargo+duty+freight</span></td>`+M.columns.map(c=>`<td><b>${money(c.landed.total)}</b></td>`).join('')+'</tr>';
+    h+=`<tr style="border-top:2px solid var(--line)"><td>Cargo value <span class="muted">(FOB)</span></td>`+M.columns.map(c=>`<td>${money(c.landed.productValue)}</td>`).join('')+'</tr>';
+    if(r.duty_pct) h+=`<tr><td>Duty <span class="muted">(${r.duty_pct}%% FOB)</span></td>`+M.columns.map(c=>`<td>${money(c.landed.duty)}</td>`).join('')+'</tr>';
+    if(M.columns[0]&&M.columns[0].landed.entryFees) h+=`<tr><td>US entry fees <span class="muted">(MPF+HMF, est.)</span></td>`+M.columns.map(c=>`<td>${money(c.landed.entryFees)}</td>`).join('')+'</tr>';
+    h+=`<tr><td><b>Landed total</b></td>`+M.columns.map(c=>`<td><b>${money(c.landed.total)}</b></td>`).join('')+'</tr>';
     h+=`<tr><td><b>Landed / unit</b></td>`+M.columns.map(c=>`<td style="${c.quote.id===cheapId?'color:var(--teal);font-weight:800':'font-weight:700'}">${'$'+c.landed.perUnit.toFixed(4)}</td>`).join('')+'</tr>';
   }
   h+=`<tr><td></td>`+M.columns.map(c=>`<td><button class="ghost sm" onclick="editQuote(${c.quote.id})">Edit</button></td>`).join('')+'</tr>';
