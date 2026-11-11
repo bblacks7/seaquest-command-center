@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Freight Desk — tests</title>
+<script src="freight_calc.js"></script>
+<style>
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:#0a0e14;color:#e7eef7;margin:0;padding:24px}
+  h1{font-size:1.3rem}
+  #summary{font-size:1.1rem;font-weight:800;padding:12px 16px;border-radius:10px;margin:14px 0;display:inline-block}
+  .ok{background:#0e3a2a;color:#22c58b}.bad{background:#3a1216;color:#ff6b6e}
+  table{border-collapse:collapse;width:100%;max-width:900px;font-size:.9rem}
+  td,th{border-bottom:1px solid #233043;padding:7px 10px;text-align:left}
+  .p{color:#22c58b;font-weight:700}.f{color:#ff6b6e;font-weight:700}
+  .exp{color:#8aa0b6;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.82rem}
+</style>
+</head>
+<body>
+<h1>⚓ Freight Desk — data-model & comparison tests</h1>
+<div id="summary"></div>
+<table id="rows"><thead><tr><th>#</th><th>Test</th><th>Result</th><th>Detail</th></tr></thead><tbody></tbody></table>
+<script>
+const FC = window.FreightCalc;
+let pass=0, fail=0; const tb=document.querySelector('#rows tbody');
+function row(name, ok, detail){
+  pass += ok?1:0; fail += ok?0:1;
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>${pass+fail}</td><td>${name}</td><td class="${ok?'p':'f'}">${ok?'PASS':'FAIL'}</td><td class="exp">${detail||''}</td>`;
+  tb.appendChild(tr);
+}
+const near=(a,b,eps)=>Math.abs(a-b)<=(eps==null?0.001:eps);
+function eq(name, got, want){ row(name, got===want, `got ${JSON.stringify(got)}, want ${JSON.stringify(want)}`); }
+function approx(name, got, want, eps){ row(name, near(got,want,eps), `got ${got}, want ~${want}`); }
+
+// ---- fixtures ----
+const rfq = { unit_count:10000, product_unit_cost:0.25, duty_pct:0 };           // $2,500 cargo, no duty
+const rfqDuty = { unit_count:10000, product_unit_cost:0.25, duty_pct:6 };        // 6% duty = $150
+
+// ---- line items / totals ----
+eq('lineItemsTotal sums items', FC.lineItemsTotal({line_items:[{label:'Ocean',amount:3200},{label:'Drayage',amount:650},{label:'Customs',amount:150}]}), 4000);
+eq('lineItemsTotal empty = 0', FC.lineItemsTotal({line_items:[]}), 0);
+eq('lineItemsTotal missing array = 0', FC.lineItemsTotal({}), 0);
+eq('quoteTotal prefers explicit total', FC.quoteTotal({total:5000, line_items:[{label:'x',amount:1}]}), 5000);
+eq('quoteTotal falls back to line items', FC.quoteTotal({total:0, line_items:[{label:'Ocean',amount:3200},{label:'Fees',amount:300}]}), 3500);
+eq('quoteTotal handles string amounts', FC.quoteTotal({line_items:[{label:'a',amount:'1200.50'},{label:'b',amount:'0.50'}]}), 1201);
+
+// ---- product value & duty ----
+eq('productValue = units * unit cost', FC.productValue(rfq), 2500);
+eq('dutyAmount 0%% = 0', FC.dutyAmount(rfq), 0);
+approx('dutyAmount 6%% of 2500 = 150', FC.dutyAmount(rfqDuty), 150);
+
+// ---- landed cost ----
+const L = FC.landedCost(rfq, {total:4000});
+eq('landed.freight', L.freight, 4000);
+eq('landed.productValue', L.productValue, 2500);
+eq('landed.total = cargo+duty+freight', L.total, 6500);
+approx('landed.perUnit = 6500/10000', L.perUnit, 0.65);
+const L2 = FC.landedCost(rfqDuty, {total:4000});
+eq('landed.total with 6%% duty', L2.total, 6650);               // 2500 + 150 + 4000
+approx('landed.perUnit with duty', L2.perUnit, 0.665);
+const L3 = FC.landedCost({unit_count:0, product_unit_cost:1}, {total:100});
+eq('landed.perUnit guards divide-by-zero', L3.perUnit, 0);
+
+// ---- expiry ----
+eq('expiry none when no date', FC.quoteExpiry({}, '2026-11-11').status, 'none');
+eq('expiry expired when past', FC.quoteExpiry({valid_until:'2026-11-01'}, '2026-11-11').status, 'expired');
+eq('expiry expiring within 7d', FC.quoteExpiry({valid_until:'2026-11-15'}, '2026-11-11').status, 'expiring');
+eq('expiry valid when far out', FC.quoteExpiry({valid_until:'2026-12-20'}, '2026-11-11').status, 'valid');
+eq('expiry daysLeft correct', FC.quoteExpiry({valid_until:'2026-11-18'}, '2026-11-11').daysLeft, 7);
+eq('expiry boundary: today = expiring (0 days)', FC.quoteExpiry({valid_until:'2026-11-11'}, '2026-11-11').status, 'expiring');
+
+// ---- ranking ----
+const quotes = [
+  {id:1, provider_id:1, total:4200, valid_until:'2026-12-01', line_items:[{label:'Ocean',amount:3500},{label:'Drayage',amount:700}]},
+  {id:2, provider_id:2, total:3900, valid_until:'2026-11-13', line_items:[{label:'Ocean',amount:3300},{label:'Drayage',amount:600}]},
+  {id:3, provider_id:3, total:0,    valid_until:'2026-12-10', line_items:[]}   // no freight yet
+];
+const ranked = FC.rankByLanded(rfq, quotes);
+eq('rank: cheapest freight first', ranked[0].quote.id, 2);
+eq('rank: second', ranked[1].quote.id, 1);
+eq('rank: zero-freight sinks to bottom', ranked[2].quote.id, 3);
+eq('rank: cheapest flagged', ranked[0].isCheapest, true);
+eq('rank: non-cheapest not flagged', ranked[1].isCheapest, false);
+approx('rank: cheapest landed/unit = (2500+3900)/10000', ranked[0].landed.perUnit, 0.64);
+eq('rank: expiring quote detected on winner', ranked[0].expiry.status, 'expiring');
+
+// ---- comparison matrix ----
+const M = FC.cmpMatrix(rfq, quotes);
+eq('matrix: union of labels', M.labels.length, 2);
+eq('matrix: labels content', M.labels.join(','), 'Ocean,Drayage');
+eq('matrix: one column per quote', M.columns.length, 3);
+eq('matrix: cell lookup', M.columns[0].cells['Ocean'], 3500);
+eq('matrix: missing cell undefined', M.columns[2].cells['Ocean'], undefined);
+eq('matrix: landed computed per column', M.columns[1].landed.total, 6400); // 2500+0+3900
+
+// ---- summary ----
+const s=document.querySelector('#summary');
+s.textContent = `${pass} passed, ${fail} failed`;
+s.className = fail===0 ? 'ok' : 'bad';
+document.title = (fail===0?'PASS ':'FAIL ')+document.title;
+</script>
+</body>
+</html>
