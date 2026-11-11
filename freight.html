@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SeaQuest Freight Desk</title>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--bg:#0a0e14;--panel:#121a26;--panel2:#18222f;--line:#233043;--tx:#e7eef7;--dim:#8aa0b6;--dim2:#5f7183;
+    --teal:#00e0a4;--blue:#2f80ed;--gold:#ffd23f;--red:#ff4d4f;--green:#22c58b;--orange:#ff7a45;--purple:#b37feb;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  a{color:var(--teal)}
+  .wrap{max-width:1180px;margin:0 auto;padding:16px}
+  header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:14px 16px;position:sticky;top:0;background:rgba(10,14,20,.92);backdrop-filter:blur(6px);z-index:20}
+  .brand{font-weight:800;display:flex;gap:9px;align-items:center}
+  .brand .mk{width:28px;height:28px;border-radius:7px;background:linear-gradient(135deg,var(--teal),var(--blue));display:grid;place-items:center;color:#04121a;font-weight:900}
+  nav.tabs{display:flex;gap:4px}
+  nav.tabs button{background:none;border:0;color:var(--dim);font-weight:600;padding:8px 14px;border-radius:9px;cursor:pointer;font-size:.92rem}
+  nav.tabs button.active{background:var(--panel2);color:#fff}
+  .ghost{background:none;border:1px solid var(--line);color:var(--dim);padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.85rem}
+  .ghost:hover{color:#fff;border-color:var(--teal)}
+  .btn{background:var(--teal);color:#04121a;border:0;padding:9px 15px;border-radius:9px;font-weight:700;cursor:pointer;font-size:.9rem}
+  .btn.blue{background:var(--blue);color:#fff}
+  .btn.sm{padding:5px 10px;font-size:.8rem}
+  .btn.rej{background:transparent;border:1px solid var(--red);color:var(--red)}
+  /* auth gate */
+  #gate{max-width:380px;margin:9vh auto;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:26px}
+  #gate h1{font-size:1.3rem;margin:0 0 4px}
+  #gate p{color:var(--dim);font-size:.9rem;margin:0 0 18px}
+  .field{margin-bottom:12px}.field label{display:block;font-size:.78rem;color:var(--dim);margin-bottom:5px}
+  input,select,textarea{width:100%;background:#0e1723;border:1px solid var(--line);color:var(--tx);border-radius:9px;padding:10px 12px;font-size:.92rem;font-family:inherit}
+  textarea{min-height:66px;resize:vertical}
+  .err{color:var(--red);font-size:.85rem;margin-top:8px;display:none}
+  /* directory */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:14px 0}
+  .toolbar .grow{flex:1;min-width:150px}
+  .count{color:var(--dim);font-size:.85rem}
+  table{width:100%;border-collapse:collapse;font-size:.9rem}
+  th{text-align:left;color:var(--dim2);font-weight:700;font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;padding:8px 10px;border-bottom:1px solid var(--line)}
+  td{padding:10px;border-bottom:1px solid var(--line);vertical-align:top}
+  tr:hover td{background:var(--panel)}
+  .pill{display:inline-block;font-size:.72rem;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--panel2);color:var(--dim)}
+  .pill.new{color:var(--dim)}.pill.contacted{color:var(--gold)}.pill.quoted{color:var(--blue)}.pill.preferred{color:var(--teal)}.pill.do_not_use{color:var(--red)}
+  .tag{display:inline-block;font-size:.7rem;background:#0e1723;border:1px solid var(--line);color:var(--dim);padding:2px 7px;border-radius:6px;margin:1px}
+  .muted{color:var(--dim2);font-size:.82rem}
+  /* modal */
+  #bg{position:fixed;inset:0;background:rgba(2,6,12,.72);display:none;align-items:flex-start;justify-content:center;padding:28px 14px;overflow-y:auto;z-index:50}
+  #bg.show{display:flex}
+  .modal{max-width:560px;width:100%;background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+  .modal h2{margin:0 0 14px;font-size:1.1rem}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chk{display:inline-flex;align-items:center;gap:6px;background:#0e1723;border:1px solid var(--line);padding:7px 11px;border-radius:8px;font-size:.84rem;cursor:pointer}
+  .chk input{width:auto}
+  .modal-actions{display:flex;gap:9px;justify-content:flex-end;margin-top:18px}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:80}
+  .toast.show{opacity:1}
+  .empty{text-align:center;color:var(--dim);padding:46px 10px}
+  .soon{text-align:center;color:var(--dim);padding:46px 10px;border:1px dashed var(--line);border-radius:14px;margin-top:16px}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH GATE ===== -->
+<div id="gate">
+  <h1>⚓ Freight Desk</h1>
+  <p>Private logistics workspace. Sign in with your SeaQuest Command Center account.</p>
+  <div class="field"><label>Email</label><input id="g_email" type="email" autocomplete="username"></div>
+  <div class="field"><label>Password</label><input id="g_pw" type="password" autocomplete="current-password"></div>
+  <button class="btn" style="width:100%" onclick="doLogin()">Sign in</button>
+  <div class="err" id="g_err"></div>
+  <p style="margin-top:14px;font-size:.82rem">No account? <a href="index.html">Open the Command Center</a> to sign up (an admin approves you).</p>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app" hidden>
+  <header class="top">
+    <div class="brand"><span class="mk">⚓</span> Freight Desk</div>
+    <nav class="tabs">
+      <button data-v="directory" class="active" onclick="go('directory')">Directory</button>
+      <button data-v="rfq" onclick="go('rfq')">New RFQ</button>
+      <button data-v="compare" onclick="go('compare')">Compare</button>
+    </nav>
+    <button class="ghost" onclick="signOut()">Sign out</button>
+  </header>
+  <main class="wrap" id="view"></main>
+</div>
+
+<div id="bg" onclick="if(event.target===this)closeModal()"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const CFG=window.SEAQUEST_CONFIG||{};
+let sb=null, PROFILE=null, PROVIDERS=[], CONTACTS={};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2200);}
+function closeModal(){$('#bg').classList.remove('show');}
+function openModal(html){$('#modal').innerHTML=html;$('#bg').classList.add('show');}
+
+const LANES=[['china_uswc','China → US West Coast'],['oman_us','Oman → US']];
+const SERVICES=[['ocean','Ocean freight'],['customs','Customs clearance'],['drayage','Drayage / trucking'],['warehousing','Warehousing / 3PL']];
+const TYPES=[['forwarder','Freight forwarder'],['nvocc','NVOCC'],['customs_broker','Customs broker'],['drayage','Drayage / trucking'],['3pl','3PL warehouse']];
+const STATUSES=['new','contacted','quoted','preferred','do_not_use'];
+const typeLabel=t=>(TYPES.find(x=>x[0]===t)||[t,t])[1];
+const laneLabel=l=>(LANES.find(x=>x[0]===l)||[l,l])[1];
+
+// ---------- boot / auth ----------
+async function boot(){
+  if(!window.supabase||!CFG.url){ $('#gate').innerHTML='<h1>Setup needed</h1><p>config.js / Supabase failed to load.</p>'; return; }
+  sb=window.supabase.createClient(CFG.url,CFG.anonKey);
+  const {data}=await sb.auth.getSession();
+  if(data&&data.session){ await afterLogin(); } // else gate stays
+}
+async function doLogin(){
+  const email=($('#g_email').value||'').trim(), pw=$('#g_pw').value, err=$('#g_err'); err.style.display='none';
+  try{ const {error}=await sb.auth.signInWithPassword({email,password:pw});
+    if(error){ err.textContent=error.message; err.style.display='block'; return; }
+    await afterLogin();
+  }catch(e){ err.textContent='Sign-in failed'; err.style.display='block'; }
+}
+async function afterLogin(){
+  const {data:{user}}=await sb.auth.getUser();
+  let {data:prof}=await sb.from('profiles').select('*').eq('id',user.id).maybeSingle();
+  PROFILE=prof;
+  if(!prof||!prof.approved){
+    $('#gate').innerHTML='<h1>Waiting for approval</h1><p>Your account isn\'t approved yet. An admin can approve you from the Command Center. Then reload this page.</p><button class="ghost" style="width:100%" onclick="location.reload()">Reload</button>';
+    document.getElementById('gate').style.display='block'; document.getElementById('app').hidden=true; return;
+  }
+  document.getElementById('gate').style.display='none';
+  document.getElementById('app').hidden=false;
+  go('directory');
+}
+async function signOut(){ try{await sb.auth.signOut();}catch(e){} location.reload(); }
+
+// ---------- data ----------
+async function loadProviders(){
+  const {data,error}=await sb.from('freight_providers').select('*').order('name');
+  if(error){toast('Load failed: '+error.message);return;}
+  PROVIDERS=data||[];
+  const {data:cs}=await sb.from('freight_contacts').select('*');
+  CONTACTS={}; (cs||[]).forEach(c=>{(CONTACTS[c.provider_id]=CONTACTS[c.provider_id]||[]).push(c);});
+}
+
+// ---------- router ----------
+async function go(v){
+  document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
+  const view=$('#view');
+  if(v==='directory'){ view.innerHTML='<p class="muted">Loading…</p>'; await loadProviders(); renderDirectory(); }
+  else if(v==='rfq'){ view.innerHTML='<div class="soon"><b>New RFQ + spec sheet</b><br>Built in Part 3 — the standardized spec sheet you fill once and send to selected shippers (saved to Gmail drafts).</div>'; }
+  else if(v==='compare'){ view.innerHTML='<div class="soon"><b>Quote comparison + landed cost</b><br>Built in Part 4 — side-by-side quotes per RFQ, expiry flags, and landed-cost per unit.</div>'; }
+}
+
+// ---------- directory (Part 1) ----------
+let FILTER={type:'',lane:'',status:'',q:''};
+function renderDirectory(){
+  const rows=PROVIDERS.filter(p=>
+    (!FILTER.type||p.type===FILTER.type)&&
+    (!FILTER.lane||(p.lanes||[]).includes(FILTER.lane))&&
+    (!FILTER.status||p.status===FILTER.status)&&
+    (!FILTER.q||(p.name||'').toLowerCase().includes(FILTER.q.toLowerCase()))
+  );
+  let h=`<div class="toolbar">
+    <select onchange="FILTER.type=this.value;renderDirectory()"><option value="">All types</option>${TYPES.map(t=>`<option value="${t[0]}" ${FILTER.type===t[0]?'selected':''}>${t[1]}</option>`).join('')}</select>
+    <select onchange="FILTER.lane=this.value;renderDirectory()"><option value="">All lanes</option>${LANES.map(l=>`<option value="${l[0]}" ${FILTER.lane===l[0]?'selected':''}>${l[1]}</option>`).join('')}</select>
+    <select onchange="FILTER.status=this.value;renderDirectory()"><option value="">All statuses</option>${STATUSES.map(s=>`<option value="${s}" ${FILTER.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}</select>
+    <input class="grow" placeholder="Search name…" value="${esc(FILTER.q)}" oninput="FILTER.q=this.value;renderDirectory()">
+    <button class="btn" onclick="editProvider()">+ Add provider</button>
+  </div>
+  <div class="count">${rows.length} of ${PROVIDERS.length} providers</div>`;
+  if(!PROVIDERS.length){ h+='<div class="empty">No providers yet. Add one, or Part 2 will research and fill this directory.</div>'; view.innerHTML=h; return; }
+  h+='<table><thead><tr><th>Name</th><th>Type</th><th>Lanes</th><th>Status</th><th>Contacts</th><th></th></tr></thead><tbody>';
+  rows.forEach(p=>{
+    const cc=(CONTACTS[p.id]||[]).length;
+    h+=`<tr>
+      <td><b>${esc(p.name)}</b>${p.website?`<br><a href="${esc(p.website)}" target="_blank" class="muted">${esc((p.website||'').replace(/^https?:\/\//,''))}</a>`:''}${p.license_no?`<br><span class="muted">Lic: ${esc(p.license_no)}</span>`:''}</td>
+      <td>${typeLabel(p.type)}</td>
+      <td>${(p.lanes||[]).map(l=>`<span class="tag">${esc(laneLabel(l))}</span>`).join('')||'<span class="muted">—</span>'}</td>
+      <td><span class="pill ${p.status}">${(p.status||'new').replace(/_/g,' ')}</span></td>
+      <td><button class="ghost sm" onclick="viewContacts(${p.id})">${cc} contact${cc===1?'':'s'}</button></td>
+      <td style="text-align:right"><button class="ghost sm" onclick="editProvider(${p.id})">Edit</button></td>
+    </tr>`;
+  });
+  h+='</tbody></table>';
+  view.innerHTML=h;
+}
+
+function editProvider(id){
+  const p=id?PROVIDERS.find(x=>x.id===id):{lanes:[],services:[],status:'new',type:'forwarder'};
+  openModal(`<h2>${id?'Edit':'Add'} provider</h2>
+    <div class="field"><label>Company name *</label><input id="p_name" value="${esc(p.name)}"></div>
+    <div class="row2">
+      <div class="field"><label>Type</label><select id="p_type">${TYPES.map(t=>`<option value="${t[0]}" ${p.type===t[0]?'selected':''}>${t[1]}</option>`).join('')}</select></div>
+      <div class="field"><label>Status</label><select id="p_status">${STATUSES.map(s=>`<option value="${s}" ${p.status===s?'selected':''}>${s.replace(/_/g,' ')}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Website</label><input id="p_web" value="${esc(p.website)}" placeholder="https://"></div>
+    <div class="field"><label>Lanes served</label><div class="chips">${LANES.map(l=>`<label class="chk"><input type="checkbox" class="p_lane" value="${l[0]}" ${(p.lanes||[]).includes(l[0])?'checked':''}> ${l[1]}</label>`).join('')}</div></div>
+    <div class="field"><label>Services</label><div class="chips">${SERVICES.map(s=>`<label class="chk"><input type="checkbox" class="p_svc" value="${s[0]}" ${(p.services||[]).includes(s[0])?'checked':''}> ${s[1]}</label>`).join('')}</div></div>
+    <div class="row2">
+      <div class="field"><label>License # (FMC/CBP)</label><input id="p_lic" value="${esc(p.license_no)}"></div>
+      <div class="field"><label>Source URL</label><input id="p_src" value="${esc(p.source_url)}"></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="p_notes">${esc(p.notes)}</textarea></div>
+    <div class="modal-actions">${id?`<button class="btn rej sm" onclick="delProvider(${id})">Delete</button>`:''}<button class="ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveProvider(${id||0})">Save</button></div>`);
+}
+async function saveProvider(id){
+  const rec={ name:$('#p_name').value.trim(), type:$('#p_type').value, status:$('#p_status').value,
+    website:$('#p_web').value.trim()||null, license_no:$('#p_lic').value.trim()||null, source_url:$('#p_src').value.trim()||null,
+    notes:$('#p_notes').value.trim()||null,
+    lanes:[...document.querySelectorAll('.p_lane:checked')].map(x=>x.value),
+    services:[...document.querySelectorAll('.p_svc:checked')].map(x=>x.value), updated_at:new Date().toISOString() };
+  if(!rec.name){toast('Name required');return;}
+  const q=id?sb.from('freight_providers').update(rec).eq('id',id):sb.from('freight_providers').insert(rec);
+  const {error}=await q; if(error){toast('Save failed: '+error.message);return;}
+  closeModal();toast('Saved');await loadProviders();renderDirectory();
+}
+async function delProvider(id){ if(!confirm('Delete this provider and its contacts?'))return;
+  const {error}=await sb.from('freight_providers').delete().eq('id',id);
+  if(error){toast('Delete failed');return;} closeModal();toast('Deleted');await loadProviders();renderDirectory();
+}
+
+// ---------- contacts ----------
+function viewContacts(pid){
+  const p=PROVIDERS.find(x=>x.id===pid); const cs=CONTACTS[pid]||[];
+  openModal(`<h2>${esc(p.name)} — contacts</h2>
+    ${cs.length?cs.map(c=>`<div style="border:1px solid var(--line);border-radius:10px;padding:11px;margin-bottom:9px">
+      <b>${esc(c.name)||'(no name)'}</b> ${c.verified?'<span class="tag" style="color:var(--teal)">verified</span>':'<span class="tag" style="color:var(--gold)">unverified</span>'}
+      <div class="muted">${esc(c.title)||''}</div>
+      <div>${c.email?`<a href="mailto:${esc(c.email)}">${esc(c.email)}</a>`:'<span class="muted">no email</span>'} ${c.phone?' · '+esc(c.phone):''}</div>
+      ${c.source_url?`<div class="muted">src: <a href="${esc(c.source_url)}" target="_blank">${esc((c.source_url||'').replace(/^https?:\/\//,'').slice(0,40))}</a> ${c.source_date?'('+esc(c.source_date)+')':''}</div>`:''}
+      <div style="text-align:right"><button class="ghost sm" onclick="editContact(${pid},${c.id})">Edit</button></div></div>`).join(''):'<p class="muted">No contacts yet.</p>'}
+    <div class="modal-actions"><button class="ghost" onclick="closeModal()">Close</button><button class="btn" onclick="editContact(${pid})">+ Add contact</button></div>`);
+}
+function editContact(pid,cid){
+  const c=cid?(CONTACTS[pid]||[]).find(x=>x.id===cid):{};
+  openModal(`<h2>${cid?'Edit':'Add'} contact</h2>
+    <div class="row2"><div class="field"><label>Name</label><input id="c_name" value="${esc(c.name)}"></div>
+    <div class="field"><label>Title</label><input id="c_title" value="${esc(c.title)}"></div></div>
+    <div class="row2"><div class="field"><label>Email</label><input id="c_email" value="${esc(c.email)}"></div>
+    <div class="field"><label>Phone</label><input id="c_phone" value="${esc(c.phone)}"></div></div>
+    <div class="row2"><div class="field"><label>Source URL</label><input id="c_src" value="${esc(c.source_url)}"></div>
+    <div class="field"><label>Source date</label><input id="c_date" type="date" value="${esc(c.source_date)}"></div></div>
+    <label class="chk" style="margin-top:4px"><input type="checkbox" id="c_ver" ${c.verified?'checked':''}> Contact verified</label>
+    <div class="modal-actions">${cid?`<button class="btn rej sm" onclick="delContact(${pid},${cid})">Delete</button>`:''}<button class="ghost" onclick="viewContacts(${pid})">Back</button><button class="btn" onclick="saveContact(${pid},${cid||0})">Save</button></div>`);
+}
+async function saveContact(pid,cid){
+  const rec={ provider_id:pid, name:$('#c_name').value.trim()||null, title:$('#c_title').value.trim()||null,
+    email:$('#c_email').value.trim()||null, phone:$('#c_phone').value.trim()||null,
+    source_url:$('#c_src').value.trim()||null, source_date:$('#c_date').value||null, verified:$('#c_ver').checked };
+  const q=cid?sb.from('freight_contacts').update(rec).eq('id',cid):sb.from('freight_contacts').insert(rec);
+  const {error}=await q; if(error){toast('Save failed: '+error.message);return;}
+  toast('Saved');await loadProviders();viewContacts(pid);
+}
+async function delContact(pid,cid){ const {error}=await sb.from('freight_contacts').delete().eq('id',cid);
+  if(error){toast('Delete failed');return;} toast('Deleted');await loadProviders();viewContacts(pid);
+}
+
+boot();
+</script>
+</body>
+</html>
