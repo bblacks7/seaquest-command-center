@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <title>SeaQuest Freight Desk</title>
 <script src="config.js"></script>
+<script src="freight_calc.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{--bg:#0a0e14;--panel:#121a26;--panel2:#18222f;--line:#233043;--tx:#e7eef7;--dim:#8aa0b6;--dim2:#5f7183;
@@ -58,6 +59,7 @@
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);color:#fff;padding:11px 18px;border-radius:10px;opacity:0;transition:.25s;z-index:80}
   .toast.show{opacity:1}
   .empty{text-align:center;color:var(--dim);padding:46px 10px}
+  @media(max-width:720px){.rfqgrid{grid-template-columns:1fr!important}.row2{grid-template-columns:1fr}}
   .soon{text-align:center;color:var(--dim);padding:46px 10px;border:1px dashed var(--line);border-radius:14px;margin-top:16px}
 </style>
 </head>
@@ -148,9 +150,10 @@ async function loadProviders(){
 async function go(v){
   document.querySelectorAll('nav.tabs button').forEach(b=>b.classList.toggle('active',b.dataset.v===v));
   const view=$('#view');
-  if(v==='directory'){ view.innerHTML='<p class="muted">Loading…</p>'; await loadProviders(); renderDirectory(); }
-  else if(v==='rfq'){ view.innerHTML='<div class="soon"><b>New RFQ + spec sheet</b><br>Built in Part 3 — the standardized spec sheet you fill once and send to selected shippers (saved to Gmail drafts).</div>'; }
-  else if(v==='compare'){ view.innerHTML='<div class="soon"><b>Quote comparison + landed cost</b><br>Built in Part 4 — side-by-side quotes per RFQ, expiry flags, and landed-cost per unit.</div>'; }
+  view.innerHTML='<p class="muted">Loading…</p>';
+  if(v==='directory'){ await loadProviders(); renderDirectory(); }
+  else if(v==='rfq'){ await loadProviders(); await loadRfqs(); renderRfqList(); }
+  else if(v==='compare'){ await loadProviders(); await loadRfqs(); renderCompare(); }
 }
 
 // ---------- directory (Part 1) ----------
@@ -255,6 +258,269 @@ async function saveContact(pid,cid){
 }
 async function delContact(pid,cid){ const {error}=await sb.from('freight_contacts').delete().eq('id',cid);
   if(error){toast('Delete failed');return;} toast('Deleted');await loadProviders();viewContacts(pid);
+}
+
+// ================= PART 3: RFQ + spec sheet + Gmail drafts =================
+const ORIGINS=[['Xiamen, CN','china_uswc'],['Shenzhen, CN','china_uswc'],['Ningbo, CN','china_uswc'],['Shanghai, CN','china_uswc'],['Sohar, OM','oman_us'],['Salalah, OM','oman_us']];
+const INCOTERMS=['FOB','EXW','CIF','CFR','DAP','DDP'];
+const CONTAINERS=['20GP','40GP','40HC','LCL'];
+const REPLY_TO='quotes@seaquest-global.com';
+let RFQS=[], SENDS={}, QUOTES={}, CUR_RFQ=null, CMP_RFQ=null;
+const laneForOrigin=o=>{const m=ORIGINS.find(x=>x[0]===o);return m?m[1]:((o||'').match(/OM|oman|sohar|salalah/i)?'oman_us':'china_uswc');};
+const money=n=>'$'+(FreightCalc.num(n)).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+
+async function loadRfqs(){
+  const {data,error}=await sb.from('freight_rfqs').select('*').order('created_at',{ascending:false});
+  if(error){toast('Load RFQs failed: '+error.message);RFQS=[];return;}
+  RFQS=data||[];
+  const {data:s}=await sb.from('freight_rfq_sends').select('*');
+  SENDS={}; (s||[]).forEach(x=>{(SENDS[x.rfq_id]=SENDS[x.rfq_id]||[]).push(x);});
+}
+async function loadQuotes(rfqId){
+  const {data}=await sb.from('freight_quotes').select('*').eq('rfq_id',rfqId).order('created_at');
+  QUOTES[rfqId]=data||[];
+}
+
+function renderRfqList(){
+  let h=`<div class="toolbar"><h2 style="margin:0;flex:1;font-size:1.1rem">Requests for quote</h2><button class="btn" onclick="editRfq()">+ New RFQ</button></div>`;
+  if(!RFQS.length){ h+='<div class="empty">No RFQs yet. Create one — you fill the spec sheet once, then draft it to every shipper you pick.</div>'; view.innerHTML=h; return; }
+  h+='<table><thead><tr><th>Ref</th><th>Lane</th><th>Final delivery</th><th>Container</th><th>Status</th><th>Drafts</th><th></th></tr></thead><tbody>';
+  RFQS.forEach(r=>{
+    const lane=laneForOrigin(r.origin_port), sends=(SENDS[r.id]||[]).length;
+    h+=`<tr>
+      <td><b>${esc(r.ref)||('RFQ-'+r.id)}</b><br><span class="muted">${esc(r.origin_port)}</span></td>
+      <td><span class="tag">${esc(laneLabel(lane))}</span></td>
+      <td>${esc(r.final_destination)||'<span class="muted">—</span>'}</td>
+      <td>${esc(r.container_count)||'?'} × ${esc(r.container_type)||'?'}</td>
+      <td><span class="pill ${r.status==='decided'?'preferred':r.status==='sent'?'quoted':'new'}">${esc(r.status)||'draft'}</span></td>
+      <td>${sends}</td>
+      <td style="text-align:right"><button class="ghost sm" onclick="openRfq(${r.id})">Open</button></td>
+    </tr>`;
+  });
+  h+='</tbody></table>'; view.innerHTML=h;
+}
+
+function editRfq(id){
+  const r=id?RFQS.find(x=>x.id===id):{origin_port:'Xiamen, CN',entry_port:'Los Angeles / Long Beach, CA',final_destination:'San Diego, CA',incoterm:'FOB',container_type:'40HC',container_count:1,commodity:'Paper packaging',hs_code:'4819.10',duty_pct:0,services:['ocean'],status:'draft'};
+  openModal(`<h2>${id?'Edit':'New'} RFQ</h2>
+    <div class="field"><label>Reference (your label)</label><input id="r_ref" value="${esc(r.ref)}" placeholder="e.g. QSR-cartons-Q1"></div>
+    <div class="row2">
+      <div class="field"><label>Origin port</label><select id="r_origin">${ORIGINS.map(o=>`<option ${r.origin_port===o[0]?'selected':''}>${o[0]}</option>`).join('')}</select></div>
+      <div class="field"><label>US entry port</label><input id="r_entry" value="${esc(r.entry_port)}"></div>
+    </div>
+    <div class="field"><label>Final delivery (editable per deal)</label><input id="r_dest" value="${esc(r.final_destination)}" placeholder="City, ST (door)"></div>
+    <div class="row2">
+      <div class="field"><label>Incoterm</label><select id="r_inco">${INCOTERMS.map(x=>`<option ${r.incoterm===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Cargo ready date</label><input id="r_ready" type="date" value="${esc(r.cargo_ready_date)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Container type</label><select id="r_ctype">${CONTAINERS.map(x=>`<option ${r.container_type===x?'selected':''}>${x}</option>`).join('')}</select></div>
+      <div class="field"><label>Container count</label><input id="r_ccount" type="number" min="1" value="${esc(r.container_count)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Commodity</label><input id="r_comm" value="${esc(r.commodity)}"></div>
+      <div class="field"><label>HS code</label><input id="r_hs" value="${esc(r.hs_code)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Gross weight (kg)</label><input id="r_wt" type="number" value="${esc(r.weight_kg)}"></div>
+      <div class="field"><label>Volume (CBM)</label><input id="r_vol" type="number" value="${esc(r.volume_cbm)}"></div>
+    </div>
+    <div class="field"><label>Services needed</label><div class="chips">${SERVICES.map(s=>`<label class="chk"><input type="checkbox" class="r_svc" value="${s[0]}" ${(r.services||[]).includes(s[0])?'checked':''}> ${s[1]}</label>`).join('')}</div></div>
+    <div style="border-top:1px solid var(--line);margin:14px 0 10px;padding-top:12px"><b style="font-size:.85rem;color:var(--dim)">Landed-cost inputs (for Compare)</b></div>
+    <div class="row2">
+      <div class="field"><label>Units in shipment</label><input id="r_units" type="number" value="${esc(r.unit_count)}" placeholder="e.g. 100000"></div>
+      <div class="field"><label>FOB product cost / unit ($)</label><input id="r_pcost" type="number" step="0.0001" value="${esc(r.product_unit_cost)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Import duty %</label><input id="r_duty" type="number" step="0.1" value="${r.duty_pct!=null?esc(r.duty_pct):0}"></div>
+      <div class="field"><label>Status</label><select id="r_status">${['draft','sent','quoting','decided'].map(x=>`<option ${r.status===x?'selected':''}>${x}</option>`).join('')}</select></div>
+    </div>
+    <div class="field"><label>Notes</label><textarea id="r_notes">${esc(r.notes)}</textarea></div>
+    <div class="modal-actions">${id?`<button class="btn rej sm" onclick="delRfq(${id})">Delete</button>`:''}<button class="ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveRfq(${id||0})">Save</button></div>`);
+}
+async function saveRfq(id){
+  const g=s=>$(s)?$(s).value:'';
+  const rec={ ref:g('#r_ref').trim()||null, origin_port:g('#r_origin'), entry_port:g('#r_entry').trim()||null,
+    final_destination:g('#r_dest').trim()||null, incoterm:g('#r_inco'), cargo_ready_date:g('#r_ready')||null,
+    container_type:g('#r_ctype'), container_count:parseInt(g('#r_ccount'))||null, commodity:g('#r_comm').trim()||null,
+    hs_code:g('#r_hs').trim()||null, weight_kg:parseFloat(g('#r_wt'))||null, volume_cbm:parseFloat(g('#r_vol'))||null,
+    services:[...document.querySelectorAll('.r_svc:checked')].map(x=>x.value),
+    unit_count:parseFloat(g('#r_units'))||null, product_unit_cost:parseFloat(g('#r_pcost'))||null,
+    duty_pct:parseFloat(g('#r_duty'))||0, status:g('#r_status'), notes:g('#r_notes').trim()||null };
+  const q=id?sb.from('freight_rfqs').update(rec).eq('id',id):sb.from('freight_rfqs').insert(rec).select();
+  const {data,error}=await q; if(error){toast('Save failed: '+error.message);return;}
+  closeModal();toast('RFQ saved');await loadRfqs();
+  const newId=id||(data&&data[0]&&data[0].id); if(newId) openRfq(newId); else renderRfqList();
+}
+async function delRfq(id){ if(!confirm('Delete this RFQ, its drafts and quotes?'))return;
+  const {error}=await sb.from('freight_rfqs').delete().eq('id',id);
+  if(error){toast('Delete failed');return;} closeModal();toast('Deleted');await loadRfqs();renderRfqList();
+}
+
+function specSheet(r){
+  const lane=laneForOrigin(r.origin_port);
+  const svc=(r.services||[]).map(s=>(SERVICES.find(x=>x[0]===s)||[s,s])[1]);
+  const L=[];
+  L.push('REQUEST FOR QUOTATION — Ocean Freight');
+  L.push('SeaQuest Global   |   '+(r.ref?('RFQ '+r.ref):('RFQ-'+r.id))+'   |   '+new Date().toISOString().slice(0,10));
+  L.push('');
+  L.push('Origin port:      '+(r.origin_port||''));
+  L.push('US entry port:    '+(r.entry_port||''));
+  L.push('Final delivery:   '+(r.final_destination||'')+'  (door)');
+  L.push('Incoterm:         '+(r.incoterm||''));
+  L.push('');
+  L.push('Commodity:        '+(r.commodity||'')+(r.hs_code?('  (HS '+r.hs_code+')'):''));
+  L.push('Container:        '+(r.container_count||'')+' x '+(r.container_type||''));
+  if(r.weight_kg) L.push('Gross weight:     '+r.weight_kg+' kg');
+  if(r.volume_cbm) L.push('Volume:           '+r.volume_cbm+' CBM');
+  if(r.cargo_ready_date) L.push('Cargo ready:      '+r.cargo_ready_date);
+  L.push('Services needed:  '+(svc.join(', ')||'Ocean freight'));
+  L.push('');
+  L.push('Please quote:');
+  L.push('  1. All-in ocean freight '+(r.origin_port||'origin')+' -> '+(r.entry_port||'US port'));
+  if((r.services||[]).includes('customs')) L.push('  2. US customs clearance & entry');
+  if((r.services||[]).includes('drayage')) L.push('  3. Drayage / delivery to '+(r.final_destination||'final door'));
+  if((r.services||[]).includes('warehousing')) L.push('  4. Warehousing / 3PL receiving');
+  L.push('  -> Full landed/delivered cost to '+(r.final_destination||'final destination'));
+  L.push('  -> Transit time (days, port to port and to door)');
+  L.push('  -> Rate validity (quote good through date)');
+  L.push('  -> Payment terms + all surcharges (BAF/CAF, peak season, chassis, etc.)');
+  if(r.notes){ L.push(''); L.push('Notes: '+r.notes); }
+  L.push('');
+  L.push('Please reply with your quotation. Thank you.');
+  L.push('SeaQuest Global   |   '+REPLY_TO);
+  return L.join('\n');
+}
+function rfqSubject(r){ return 'RFQ '+(r.ref||('#'+r.id))+' — Ocean freight '+(r.origin_port||'')+' to '+(r.entry_port||'')+' ('+(r.container_count||'')+'x'+(r.container_type||'')+')'; }
+
+async function openRfq(id){
+  await loadRfqs(); const r=RFQS.find(x=>x.id===id); if(!r){renderRfqList();return;}
+  CUR_RFQ=id; const lane=laneForOrigin(r.origin_port);
+  const matches=PROVIDERS.filter(p=>(p.lanes||[]).includes(lane));
+  const sent=SENDS[id]||[];
+  const sheet=specSheet(r);
+  let h=`<div class="toolbar"><button class="ghost sm" onclick="go('rfq')">← All RFQs</button><h2 style="margin:0;flex:1;font-size:1.05rem">${esc(r.ref)||('RFQ-'+r.id)}</h2><button class="ghost sm" onclick="editRfq(${id})">Edit RFQ</button></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" class="rfqgrid">
+    <div>
+      <b style="font-size:.85rem;color:var(--dim)">STANDARDIZED SPEC SHEET</b>
+      <p class="muted" style="margin:4px 0 8px">Fill once. Send the same sheet to every shipper so quotes are comparable.</p>
+      <textarea id="sheet" style="min-height:360px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.8rem" readonly>${esc(sheet)}</textarea>
+      <div style="display:flex;gap:8px;margin-top:8px"><button class="btn sm" onclick="copySheet()">Copy spec sheet</button><button class="ghost sm" onclick="printSheet()">Print / PDF</button></div>
+    </div>
+    <div>
+      <b style="font-size:.85rem;color:var(--dim)">PICK SHIPPERS — ${esc(laneLabel(lane))}</b>
+      <p class="muted" style="margin:4px 0 8px">${matches.length} provider(s) serve this lane. Draft the RFQ to each (opens a Gmail draft — nothing sends automatically).</p>
+      <div style="max-height:420px;overflow:auto;border:1px solid var(--line);border-radius:10px">`;
+  if(!matches.length) h+='<div class="empty" style="padding:24px">No providers on this lane yet. Add some in the Directory (or Part 2 research will fill them).</div>';
+  matches.forEach(p=>{
+    const cs=CONTACTS[p.id]||[]; const best=cs.find(c=>c.email)||cs[0];
+    const already=sent.find(s=>s.provider_id===p.id);
+    h+=`<div style="padding:10px 12px;border-bottom:1px solid var(--line)">
+      <div style="display:flex;justify-content:space-between;gap:8px;align-items:flex-start">
+        <div><b>${esc(p.name)}</b> <span class="pill ${p.status}">${(p.status||'new').replace(/_/g,' ')}</span>
+          <div class="muted">${best?(esc(best.name||'')+(best.email?(' · '+esc(best.email)):' · no email')):'no contact on file'}</div></div>
+        <div style="text-align:right;white-space:nowrap">
+          ${best&&best.email?`<button class="btn sm" onclick="draftGmail(${id},${p.id},${best.id})">${already?'Re-draft':'Draft in Gmail'}</button>`:`<button class="ghost sm" onclick="toast('Add a contact email for this provider first')">No email</button>`}
+          <button class="ghost sm" onclick="copyEmail(${id},${p.id})">Copy</button>
+        </div></div>
+      ${already?`<div class="muted" style="margin-top:4px;color:var(--teal)">✓ drafted ${already.created_at?('· '+String(already.created_at).slice(0,10)):''}</div>`:''}
+    </div>`;
+  });
+  h+=`</div></div></div>`;
+  view.innerHTML=h;
+}
+function copySheet(){ const t=$('#sheet'); t.select(); navigator.clipboard.writeText(t.value).then(()=>toast('Spec sheet copied'),()=>toast('Copy failed')); }
+function printSheet(){ const w=window.open('','_blank'); w.document.write('<pre style="font:13px ui-monospace,Menlo,Consolas,monospace;white-space:pre-wrap">'+esc($('#sheet').value)+'</pre>'); w.document.close(); w.print(); }
+function emailBodyFor(rfqId){ const r=RFQS.find(x=>x.id===rfqId); return {subject:rfqSubject(r), body:specSheet(r)}; }
+function copyEmail(rfqId,pid){ const {subject,body}=emailBodyFor(rfqId); navigator.clipboard.writeText('Subject: '+subject+'\n\n'+body).then(()=>toast('Email copied'),()=>toast('Copy failed')); }
+async function draftGmail(rfqId,pid,cid){
+  const c=(CONTACTS[pid]||[]).find(x=>x.id===cid); if(!c||!c.email){toast('No email');return;}
+  const {subject,body}=emailBodyFor(rfqId);
+  const url='https://mail.google.com/mail/?view=cm&fs=1&to='+encodeURIComponent(c.email)+'&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+  window.open(url,'_blank');  // Gmail opens a compose window and auto-saves it as a draft. Never auto-sends.
+  // log the send intent (idempotent-ish: one row per draft action)
+  await sb.from('freight_rfq_sends').insert({rfq_id:rfqId,provider_id:pid,contact_id:cid,draft_status:'draft_saved'});
+  toast('Gmail draft opened — review & save, nothing sent');
+  await loadRfqs(); openRfq(rfqId);
+}
+
+// ================= PART 4: quotes + comparison + landed cost =================
+async function renderCompare(){
+  if(!RFQS.length){ view.innerHTML='<div class="empty">No RFQs yet. Create one in <b>New RFQ</b> first, then log quotes here.</div>'; return; }
+  if(!CMP_RFQ||!RFQS.find(x=>x.id===CMP_RFQ)) CMP_RFQ=RFQS[0].id;
+  await loadQuotes(CMP_RFQ);
+  const r=RFQS.find(x=>x.id===CMP_RFQ), qs=QUOTES[CMP_RFQ]||[];
+  const provName=id=>{const p=PROVIDERS.find(x=>x.id===id);return p?p.name:'(provider '+id+')';};
+  let h=`<div class="toolbar">
+    <select onchange="CMP_RFQ=parseInt(this.value);renderCompare()">${RFQS.map(x=>`<option value="${x.id}" ${x.id===CMP_RFQ?'selected':''}>${esc(x.ref)||('RFQ-'+x.id)} — ${esc(x.final_destination||'')}</option>`).join('')}</select>
+    <span class="count grow">${qs.length} quote(s)</span>
+    <button class="btn" onclick="editQuote()">+ Log quote</button></div>`;
+  // landed-cost inputs summary
+  const haveLanded=r.unit_count&&r.product_unit_cost;
+  h+=`<div class="muted" style="margin-bottom:10px">Cargo: ${r.unit_count?Number(r.unit_count).toLocaleString():'—'} units @ ${r.product_unit_cost?money(r.product_unit_cost):'—'}/unit${r.duty_pct?(' · duty '+r.duty_pct+'%'):''} ${haveLanded?'':'· <span style="color:var(--gold)">add units + unit cost on the RFQ to see landed cost</span>'}</div>`;
+  if(!qs.length){ h+='<div class="empty">No quotes logged for this RFQ. Click “Log quote” as shippers reply.</div>'; view.innerHTML=h; return; }
+
+  const M=FreightCalc.cmpMatrix(r,qs,new Date());
+  const ranked=FreightCalc.rankByLanded(r,qs,new Date());
+  const cheapestQid=(ranked.find(x=>x.isCheapest)||{}).quote; const cheapId=cheapestQid?cheapestQid.id:null;
+  h+='<div style="overflow:auto"><table><thead><tr><th>Line item</th>';
+  M.columns.forEach(col=>{ const ex=col.expiry; const flag=ex.status==='expired'?' <span class="tag" style="color:var(--red)">expired</span>':ex.status==='expiring'?` <span class="tag" style="color:var(--gold)">${ex.daysLeft}d left</span>`:'';
+    h+=`<th style="${col.quote.id===cheapId?'color:var(--teal)':''}">${esc(provName(col.quote.provider_id))}${col.quote.id===cheapId?' ★':''}${flag}</th>`; });
+  h+='</tr></thead><tbody>';
+  M.labels.forEach(lab=>{ h+=`<tr><td>${esc(lab)}</td>`+M.columns.map(c=>`<td>${c.cells[lab]!=null?money(c.cells[lab]):'<span class="muted">—</span>'}</td>`).join('')+'</tr>'; });
+  // freight total
+  h+=`<tr style="border-top:2px solid var(--line)"><td><b>Freight total</b></td>`+M.columns.map(c=>`<td><b>${money(c.landed.freight)}</b></td>`).join('')+'</tr>';
+  h+=`<tr><td>Transit (days)</td>`+M.columns.map(c=>`<td>${c.quote.transit_days!=null?esc(c.quote.transit_days):'<span class="muted">—</span>'}</td>`).join('')+'</tr>';
+  h+=`<tr><td>Valid until</td>`+M.columns.map(c=>{const e=c.expiry;const col=e.status==='expired'?'var(--red)':e.status==='expiring'?'var(--gold)':'var(--dim)';return `<td style="color:${col}">${c.quote.valid_until?esc(c.quote.valid_until):'—'}</td>`;}).join('')+'</tr>';
+  if(haveLanded){
+    h+=`<tr style="border-top:2px solid var(--line)"><td><b>Landed total</b><br><span class="muted">cargo+duty+freight</span></td>`+M.columns.map(c=>`<td><b>${money(c.landed.total)}</b></td>`).join('')+'</tr>';
+    h+=`<tr><td><b>Landed / unit</b></td>`+M.columns.map(c=>`<td style="${c.quote.id===cheapId?'color:var(--teal);font-weight:800':'font-weight:700'}">${'$'+c.landed.perUnit.toFixed(4)}</td>`).join('')+'</tr>';
+  }
+  h+=`<tr><td></td>`+M.columns.map(c=>`<td><button class="ghost sm" onclick="editQuote(${c.quote.id})">Edit</button></td>`).join('')+'</tr>';
+  h+='</tbody></table></div>';
+  if(haveLanded&&cheapId){ const w=ranked.find(x=>x.isCheapest); h+=`<div style="margin-top:12px;padding:12px 14px;border:1px solid var(--teal);border-radius:10px;background:rgba(0,224,164,.06)"><b style="color:var(--teal)">Best landed cost:</b> ${esc(provName(w.quote.provider_id))} at <b>$${w.landed.perUnit.toFixed(4)}/unit</b> (${money(w.landed.total)} total).${w.expiry.status==='expiring'?` <span style="color:var(--gold)">Quote expires in ${w.expiry.daysLeft} day(s) — lock it in.</span>`:w.expiry.status==='expired'?' <span style="color:var(--red)">This quote has expired — ask for a refresh.</span>':''}</div>`; }
+  view.innerHTML=h;
+}
+
+let QLINES=[];
+function editQuote(qid){
+  const r=RFQS.find(x=>x.id===CMP_RFQ);
+  const lane=laneForOrigin(r.origin_port);
+  const sentIds=(SENDS[CMP_RFQ]||[]).map(s=>s.provider_id);
+  const opts=PROVIDERS.filter(p=>(p.lanes||[]).includes(lane)||sentIds.includes(p.id));
+  const q=qid?(QUOTES[CMP_RFQ]||[]).find(x=>x.id===qid):{line_items:[{label:'Ocean freight',amount:''}],currency:'USD',received_at:new Date().toISOString().slice(0,10)};
+  QLINES=JSON.parse(JSON.stringify(q.line_items&&q.line_items.length?q.line_items:[{label:'Ocean freight',amount:''}]));
+  openModal(`<h2>${qid?'Edit':'Log'} quote</h2>
+    <div class="field"><label>Provider</label><select id="q_prov">${opts.map(p=>`<option value="${p.id}" ${q.provider_id===p.id?'selected':''}>${esc(p.name)}</option>`).join('')||'<option>(add a provider first)</option>'}</select></div>
+    <div class="field"><label>Line items</label><div id="q_lines"></div><button class="ghost sm" onclick="addLine()">+ line</button></div>
+    <div class="row2">
+      <div class="field"><label>Override total ($)</label><input id="q_total" type="number" step="0.01" value="${esc(q.total)}" placeholder="blank = sum of lines"></div>
+      <div class="field"><label>Transit (days)</label><input id="q_transit" type="number" value="${esc(q.transit_days)}"></div>
+    </div>
+    <div class="row2">
+      <div class="field"><label>Valid until</label><input id="q_valid" type="date" value="${esc(q.valid_until)}"></div>
+      <div class="field"><label>Received</label><input id="q_recv" type="date" value="${esc(q.received_at)||new Date().toISOString().slice(0,10)}"></div>
+    </div>
+    <div class="field"><label>Terms</label><input id="q_terms" value="${esc(q.terms)}" placeholder="e.g. Net 15, surcharges incl."></div>
+    <div class="field"><label>Notes</label><textarea id="q_notes">${esc(q.notes)}</textarea></div>
+    <div class="modal-actions">${qid?`<button class="btn rej sm" onclick="delQuote(${qid})">Delete</button>`:''}<button class="ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveQuote(${qid||0})">Save</button></div>`);
+  renderLines();
+}
+function renderLines(){ const el=$('#q_lines'); if(!el)return;
+  el.innerHTML=QLINES.map((li,i)=>`<div style="display:flex;gap:6px;margin-bottom:5px"><input style="flex:2" placeholder="label" value="${esc(li.label)}" oninput="QLINES[${i}].label=this.value"><input style="flex:1" type="number" step="0.01" placeholder="amount" value="${esc(li.amount)}" oninput="QLINES[${i}].amount=this.value"><button class="ghost sm" onclick="QLINES.splice(${i},1);renderLines()">✕</button></div>`).join('');
+}
+function addLine(){ QLINES.push({label:'',amount:''}); renderLines(); }
+async function saveQuote(qid){
+  const lines=QLINES.filter(l=>l.label||l.amount).map(l=>({label:l.label,amount:FreightCalc.num(l.amount)}));
+  const rec={ rfq_id:CMP_RFQ, provider_id:parseInt($('#q_prov').value)||null, currency:'USD', line_items:lines,
+    total:$('#q_total').value!==''?parseFloat($('#q_total').value):null, transit_days:parseInt($('#q_transit').value)||null,
+    valid_until:$('#q_valid').value||null, received_at:$('#q_recv').value||null, terms:$('#q_terms').value.trim()||null, notes:$('#q_notes').value.trim()||null };
+  const q=qid?sb.from('freight_quotes').update(rec).eq('id',qid):sb.from('freight_quotes').insert(rec);
+  const {error}=await q; if(error){toast('Save failed: '+error.message);return;}
+  closeModal();toast('Quote saved');renderCompare();
+}
+async function delQuote(qid){ const {error}=await sb.from('freight_quotes').delete().eq('id',qid);
+  if(error){toast('Delete failed');return;} closeModal();toast('Deleted');renderCompare();
 }
 
 boot();
