@@ -641,6 +641,7 @@ function openMenu(){
    ${grp('Work',[{icon:'\u{1F3E0}',label:'HQ',onclick:"menuGo('command')"},{icon:'⚡',label:'Quick Play',onclick:"menuGo('quickplay')"},{icon:'\u{1F3AF}',label:'Hit List',onclick:"menuGo('hitlist')"}])}
    ${grp('Grow',[{icon:'✨',label:'Research',onclick:"menuGo('research')"},{icon:'\u{1F393}',label:'Academy',onclick:"menuGo('academy')"}])}
    ${grp('Map & Data',[{icon:'\u{1F5FA}️',label:'War Map',onclick:"menuGo('map')"},{icon:'\u{1F4CB}',label:'Pipeline',onclick:"menuGo('pipeline')"},{icon:'\u{1F4CA}',label:'Sectors',onclick:"menuGo('sectors')"}])}
+   ${grp('Logistics',[{icon:'\u{1F6A2}',label:'Freight Desk',onclick:"closeModal();location.href='freight.html'"}])}
    ${grp('You & Team',[{icon:me.emoji,label:'My profile ('+esc(me.name)+')',onclick:"closeModal();openRep('"+me.id+"')"},{icon:'\u{1F4C8}',label:'Manager dashboard',onclick:"menuGo('manager')"},{icon:'\u{1F465}',label:'Switch rep',onclick:"closeModal();openMe()"}].concat((S.profile&&S.profile.is_admin)?[{icon:'✅',label:'Approvals (admin)',onclick:"menuGo('approvals')"}]:[]))}
    ${grp('Resources',[{icon:'\u{1F517}',label:'Links & tools',onclick:"menuGo('links')"}])}
    ${grp('Setup & Help',[{icon:'\u{1F514}',label:'Turn on daily reminders',onclick:"closeModal();enablePush()"},{icon:'▶',label:'Tutorial',onclick:"closeModal();startTour()"},{icon:'\u{1F511}',label:'Account / sign out',onclick:"closeModal();openCloud()"},{icon:'❓',label:'How to play',onclick:"closeModal();openHelp()"},{icon:'\u{1F4BE}',label:'Backup / Restore',onclick:"closeModal();openMe()"}])}
